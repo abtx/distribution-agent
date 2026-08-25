@@ -275,13 +275,22 @@ export function OpportunityDetail({
                   {product.name}
                 </label>
               ))}
-            <button
-              type="button"
-              disabled={saving || selectedProductIds.length === 0}
-              onClick={regenerate}
-            >
-              <RefreshCw size={14} /> Generate combined reply
-            </button>
+            <div className="reply-tools">
+              <button
+                type="button"
+                disabled={saving || selectedProductIds.length === 0}
+                onClick={regenerate}
+              >
+                <RefreshCw size={14} /> Generate combined reply
+              </button>
+              <button
+                className="copy-primary"
+                type="button"
+                onClick={copyReply}
+              >
+                <Copy size={14} /> Copy reply
+              </button>
+            </div>
           </fieldset>
           <textarea
             aria-label="Proposed reply"
@@ -293,9 +302,6 @@ export function OpportunityDetail({
               {text.length} characters {message && `· ${message}`}
             </span>
             <div className="editor-actions">
-              <button type="button" onClick={copyReply}>
-                <Copy size={13} /> Copy reply
-              </button>
               <button
                 disabled={
                   saving ||

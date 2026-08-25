@@ -744,6 +744,21 @@ dd {
 }
 .secondary:hover:not(:disabled),
 .product-picker button:hover:not(:disabled) { background: #f4f4ef; }
+.reply-tools {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.product-picker .copy-primary {
+  background: #171916;
+  border-color: #171916;
+  color: white;
+  box-shadow: 3px 3px 0 var(--lime);
+}
+.product-picker .copy-primary:hover:not(:disabled) {
+  background: #171916;
+  transform: translate(-1px, -1px);
+}
 .connection-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));
@@ -1027,5 +1042,13 @@ dd {
   }
   .primary {
     white-space: nowrap;
+  }
+  .product-picker {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .reply-tools {
+    margin-left: 0;
+    flex-wrap: wrap;
   }
 }
