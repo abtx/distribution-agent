@@ -93,7 +93,7 @@ Set a strong `CRON_SECRET`. Call `GET /api/cron/discover` for discovery and `GET
 
 Run `npm run scheduler:install` once. This installs two per-user macOS LaunchAgents:
 
-- Discovery runs at login and at 08:00. A Europe/London date marker ensures it runs at most once per day, so a laptop that was asleep catches up at the next login.
+- Discovery runs at 08:00 and 20:00 Europe/London time. It does not run at login, and an execution-time slot guard rejects macOS wake-up catch-up events, so missed runs are skipped.
 - Scheduled publishing checks for due posts every five minutes while the Mac is running.
 
 The web app does not need to be open. Logs are written to `.data/logs/`. For Mac-independent execution, deploy the app with durable storage and configure a hosted scheduler to call both secured cron endpoints.

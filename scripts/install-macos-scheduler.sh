@@ -14,9 +14,11 @@ cat > "$PLIST" <<EOF
 <key>Label</key><string>com.distribution-agent.discovery</string>
 <key>WorkingDirectory</key><string>${PROJECT_DIR}</string>
 <key>ProgramArguments</key><array><string>${NPX_BIN}</string><string>tsx</string><string>scripts/run-daily-discovery.ts</string></array>
-<key>EnvironmentVariables</key><dict><key>PATH</key><string>$(dirname "$NODE_BIN"):/usr/local/bin:/usr/bin:/bin</string></dict>
-<key>RunAtLoad</key><true/>
-<key>StartCalendarInterval</key><dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
+<key>EnvironmentVariables</key><dict><key>PATH</key><string>$(dirname "$NODE_BIN"):/usr/local/bin:/usr/bin:/bin</string><key>DISCOVERY_SCHEDULE_ONLY</key><string>true</string></dict>
+<key>StartCalendarInterval</key><array>
+  <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
+  <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>0</integer></dict>
+</array>
 <key>StandardOutPath</key><string>${LOG_DIR}/discovery.log</string>
 <key>StandardErrorPath</key><string>${LOG_DIR}/discovery-error.log</string>
 </dict></plist>
@@ -41,4 +43,4 @@ launchctl bootout "gui/$(id -u)/com.distribution-agent.discovery" 2>/dev/null ||
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
 launchctl bootout "gui/$(id -u)/com.distribution-agent.publishing" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PUBLISH_PLIST"
-echo "Installed. Discovery runs once daily; scheduled publishing checks every five minutes while this Mac is running."
+echo "Installed. Discovery runs at 08:00 and 20:00 only when this Mac is awake; missed runs are skipped. Scheduled publishing checks every five minutes while this Mac is running."
