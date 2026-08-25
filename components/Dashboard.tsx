@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "@/lib/navigation";
 import { useRouter } from "@/lib/navigation";
 import {
@@ -24,6 +24,7 @@ function age(s: string) {
 }
 export function Dashboard() {
   const router = useRouter();
+  const discoveryRequestActive = useRef(false);
   const [ops, setOps] = useState<Opportunity[]>([]),
     [products, setProducts] = useState<Product[]>([]),
     [runs, setRuns] = useState<DiscoveryRun[]>([]),
@@ -53,6 +54,8 @@ export function Dashboard() {
     void load();
   }, []);
   const run = async () => {
+    if (discoveryRequestActive.current) return;
+    discoveryRequestActive.current = true;
     setRunning(true);
     setError("");
     try {
@@ -63,6 +66,7 @@ export function Dashboard() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Discovery failed");
     } finally {
+      discoveryRequestActive.current = false;
       setRunning(false);
     }
   };

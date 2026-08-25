@@ -66,7 +66,9 @@ describe("dashboard UI", () => {
     render(<Dashboard />);
     await screen.findByText(seedOpportunities[0].post_title);
 
-    await user.click(screen.getByRole("button", { name: "Run discovery now" }));
+    await user.dblClick(
+      screen.getByRole("button", { name: "Run discovery now" }),
+    );
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Discovery is running in the background",
@@ -74,6 +76,11 @@ describe("dashboard UI", () => {
     expect(
       screen.getByRole("button", { name: /running discovery/i }),
     ).toBeDisabled();
+    expect(
+      vi.mocked(global.fetch).mock.calls.filter(
+        ([input]) => String(input) === "/api/discovery",
+      ),
+    ).toHaveLength(1);
 
     finishDiscovery(new Response("{}"));
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
