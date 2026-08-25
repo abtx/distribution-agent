@@ -103,7 +103,10 @@ describe("dashboard UI", () => {
     ).toHaveLength(1);
 
     finishDiscovery(new Response("{}"));
-    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    await waitFor(
+      () => expect(screen.queryByRole("status")).not.toBeInTheDocument(),
+      { timeout: 2000 },
+    );
   });
   it("opens an opportunity from the entire table row", async () => {
     const u = userEvent.setup();

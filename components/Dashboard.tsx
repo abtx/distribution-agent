@@ -56,6 +56,7 @@ export function Dashboard() {
   const run = async () => {
     if (discoveryRequestActive.current) return;
     discoveryRequestActive.current = true;
+    const progressStartedAt = Date.now();
     setRunning(true);
     setError("");
     try {
@@ -66,6 +67,10 @@ export function Dashboard() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Discovery failed");
     } finally {
+      const minimumVisibleMs = 1200;
+      const remaining = minimumVisibleMs - (Date.now() - progressStartedAt);
+      if (remaining > 0)
+        await new Promise((resolve) => window.setTimeout(resolve, remaining));
       discoveryRequestActive.current = false;
       setRunning(false);
     }
