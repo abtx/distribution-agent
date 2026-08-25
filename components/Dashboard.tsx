@@ -103,6 +103,8 @@ export function Dashboard() {
   const today = new Date().toDateString();
   return (
     <Shell>
+      <div className="dashboard-layout">
+        <div className="dashboard-main">
       <header>
         <div>
           <p className="eyebrow">OVERVIEW</p>
@@ -334,7 +336,78 @@ export function Dashboard() {
           </div>
         )}
       </section>
+        </div>
+        <RunLog runs={runs} manualRunActive={running} />
+      </div>
     </Shell>
+  );
+}
+
+function RunLog({
+  runs,
+  manualRunActive,
+}: {
+  runs: DiscoveryRun[];
+  manualRunActive: boolean;
+}) {
+  return (
+    <section className="run-sidebar" aria-label="Discovery run log">
+      <div className="run-log-heading">
+        <div>
+          <p className="eyebrow">ACTIVITY</p>
+          <h2>Discovery runs</h2>
+        </div>
+        <span>{runs.length + (manualRunActive ? 1 : 0)}</span>
+      </div>
+      <div className="run-list" aria-live="polite">
+        {manualRunActive && (
+          <article className="run-entry running">
+            <div className="run-entry-top">
+              <b><LoaderCircle className="spinner" size={14} /> Running</b>
+              <time>Now</time>
+            </div>
+            <p>Searching and qualifying Reddit opportunities.</p>
+          </article>
+        )}
+        {runs.map((run) => {
+          const errors = Array.isArray(run.metadata.errors)
+            ? run.metadata.errors.length
+            : 0;
+          return (
+            <article className={`run-entry ${run.status}`} key={run.id}>
+              <div className="run-entry-top">
+                <b>{run.status}</b>
+                <time dateTime={run.started_at}>
+                  {new Date(run.started_at).toLocaleString(undefined, {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </time>
+              </div>
+              <dl>
+                <div><dt>Candidates</dt><dd>{run.candidates_found}</dd></div>
+                <div><dt>Created</dt><dd>{run.opportunities_created}</dd></div>
+              </dl>
+              {run.status === "running" && <p>Discovery is still in progress.</p>}
+              {run.error && <p className="run-error">{run.error}</p>}
+              {errors > 0 && (
+                <p className="run-error">
+                  {errors} candidate {errors === 1 ? "error" : "errors"}
+                </p>
+              )}
+            </article>
+          );
+        })}
+        {!manualRunActive && runs.length === 0 && (
+          <div className="run-log-empty">
+            <b>No runs yet</b>
+            <span>Manual and scheduled discovery runs will appear here.</span>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 function Stat({

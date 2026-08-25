@@ -49,8 +49,7 @@ export const repository = {
       await c
         .from("discovery_runs")
         .select("*")
-        .order("started_at", { ascending: false })
-        .limit(30),
+        .order("started_at", { ascending: false }),
     );
   },
   async addProduct(p: Product) {

@@ -1,6 +1,6 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dashboard } from "@/components/Dashboard";
 import { OpportunityDetail } from "@/components/OpportunityDetail";
@@ -63,6 +63,49 @@ describe("dashboard UI", () => {
 
     expect(screen.getByText("done")).toBeInTheDocument();
     expect(screen.queryByText("approved")).not.toBeInTheDocument();
+  });
+  it("shows recorded discovery runs and their outcomes in the right sidebar", async () => {
+    global.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          opportunities: seedOpportunities,
+          products: seedProducts,
+          runs: [
+            {
+              id: "completed-run",
+              started_at: "2026-08-25T08:00:00.000Z",
+              completed_at: "2026-08-25T08:00:10.000Z",
+              status: "completed",
+              candidates_found: 12,
+              opportunities_created: 3,
+              error: null,
+              metadata: { errors: [] },
+            },
+            {
+              id: "failed-run",
+              started_at: "2026-08-24T20:00:00.000Z",
+              completed_at: "2026-08-24T20:00:02.000Z",
+              status: "failed",
+              candidates_found: 0,
+              opportunities_created: 0,
+              error: "Reddit authentication failed",
+              metadata: { errors: [] },
+            },
+          ],
+        }),
+      ),
+    ) as typeof fetch;
+    render(<Dashboard />);
+
+    const log = await screen.findByLabelText("Discovery run log");
+    expect(within(log).getByText("Discovery runs")).toBeInTheDocument();
+    expect(within(log).getByText("completed")).toBeInTheDocument();
+    expect(within(log).getByText("failed")).toBeInTheDocument();
+    expect(
+      within(log).getByText("Reddit authentication failed"),
+    ).toBeInTheDocument();
+    expect(within(log).getByText("12")).toBeInTheDocument();
+    expect(within(log).getByText("3")).toBeInTheDocument();
   });
   it("shows an animated background status while discovery is running", async () => {
     let finishDiscovery!: (response: Response) => void;
