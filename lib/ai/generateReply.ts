@@ -3,10 +3,13 @@ import { replySchema } from "./schemas";
 import type { Product, RedditPost } from "../types";
 export async function generateReply(post: RedditPost, products: Product[]) {
   if (!products.length) throw new Error("At least one product is required");
-  if (!process.env.OPENAI_API_KEY)
+  if (!process.env.OPENAI_API_KEY) {
+    const positioning = (product: Product) =>
+      (product.description.trim() || product.one_liner).slice(0, 240);
     return products.length === 1
-      ? `I’m building ${products[0].name} — ${products[0].one_liner} ${products[0].preferred_cta}: ${products[0].url}`
-      : `I’m building a couple of things:\n\n${products.map((product) => `• ${product.name} — ${product.one_liner} ${product.url}`).join("\n")}\n\nI’d love to hear which one is most useful to you.`;
+      ? `I’m building ${products[0].name} — ${positioning(products[0])} ${products[0].preferred_cta}: ${products[0].url}`
+      : `I’m building a couple of things:\n\n${products.map((product) => `• ${product.name} — ${positioning(product)} ${product.url}`).join("\n")}\n\nI’d love to hear which one is most useful to you.`;
+  }
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     timeout: 15000,

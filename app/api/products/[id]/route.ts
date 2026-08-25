@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { repository } from "@/lib/repository";
 import { z } from "zod";
+import { regenerateOpportunities } from "@/lib/opportunities/regenerate";
 const schema = z
   .object({
     name: z.string().min(1),
@@ -27,7 +28,16 @@ export async function PATCH(
       { status: 400 },
     );
   const p = await repository.updateProduct(id, parsed.data);
-  return p
-    ? NextResponse.json(p)
-    : NextResponse.json({ error: "Product not found" }, { status: 404 });
+  if (!p)
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  try {
+    const regeneration = await regenerateOpportunities();
+    return NextResponse.json({ ...p, regeneration });
+  } catch (error) {
+    return NextResponse.json({
+      ...p,
+      regeneration_error:
+        error instanceof Error ? error.message : "Regeneration failed",
+    });
+  }
 }

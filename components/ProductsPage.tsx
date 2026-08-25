@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Plus, Save } from "lucide-react";
+import { Plus, RefreshCw, Save } from "lucide-react";
 import type { Product, ProductStatus } from "@/lib/types";
 import { Shell } from "./Shell";
 const blank = {
@@ -19,6 +19,8 @@ export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]),
     [form, setForm] = useState(blank),
     [editing, setEditing] = useState<string | null>(null),
+    [regenerating, setRegenerating] = useState(false),
+    [message, setMessage] = useState(""),
     [error, setError] = useState("");
   const load = () =>
     fetch("/api/products")
@@ -39,6 +41,7 @@ export function ProductsPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     const body = {
       ...form,
       categories: form.categories
@@ -67,9 +70,37 @@ export function ProductsPage() {
       setError(d.error);
       return;
     }
+    const result = await r.json();
+    if (editing) {
+      if (result.regeneration_error)
+        setError(`Product saved, but regeneration failed: ${result.regeneration_error}`);
+      else if (result.regeneration)
+        setMessage(
+          `Product saved. Regenerated ${result.regeneration.regenerated} opportunities${result.regeneration.expired ? `; ${result.regeneration.expired} no longer matched` : ""}.`,
+        );
+    }
     setEditing(null);
     setForm(blank);
     await load();
+  };
+  const regenerate = async () => {
+    setRegenerating(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("/api/opportunities/regenerate", {
+        method: "POST",
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Regeneration failed");
+      setMessage(
+        `Regenerated ${result.regenerated} opportunities${result.expired ? `; ${result.expired} no longer matched` : ""}.`,
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Regeneration failed");
+    } finally {
+      setRegenerating(false);
+    }
   };
   return (
     <Shell>
@@ -81,7 +112,17 @@ export function ProductsPage() {
             Only active products are considered during discovery.
           </p>
         </div>
+        <button
+          className="secondary"
+          type="button"
+          disabled={regenerating}
+          onClick={regenerate}
+        >
+          <RefreshCw size={15} />
+          {regenerating ? "Regenerating…" : "Regenerate opportunities"}
+        </button>
       </header>
+      {message && <div className="success">{message}</div>}
       <div className="productsgrid">
         <section className="panel productlist">
           <h2>{products.length} products</h2>

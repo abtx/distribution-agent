@@ -400,6 +400,14 @@ th:nth-child(5) {
   border-radius: 8px;
   margin: 10px 0;
 }
+.success {
+  background: var(--mint);
+  color: var(--green);
+  border: 1px solid #cce4da;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 10px 0 16px;
+}
 .back {
   color: #55766a;
   text-decoration: none;

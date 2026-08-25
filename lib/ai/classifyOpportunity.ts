@@ -26,19 +26,23 @@ export async function classifyOpportunity(
             ({
               id,
               name,
+              description,
               one_liner,
               categories,
               audiences,
               keywords,
               status,
+              preferred_cta,
             }) => ({
               id,
               name,
+              description,
               one_liner,
               categories,
               audiences,
               keywords,
               status,
+              preferred_cta,
             }),
           ),
         }),
@@ -61,7 +65,13 @@ export function heuristicClassification(
   const active = products.filter((p) => p.status === "active");
   const productMatches = active
     .map((p) => {
-      const terms = [...p.keywords, ...p.categories, ...p.audiences]
+      const terms = [
+        p.description,
+        p.one_liner,
+        ...p.keywords,
+        ...p.categories,
+        ...p.audiences,
+      ]
         .flatMap((v) => v.toLowerCase().split(/\s+/))
         .filter((v) => v.length > 3);
       const hits = terms.filter((t) => text.includes(t)).length;
