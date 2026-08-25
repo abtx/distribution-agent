@@ -45,7 +45,8 @@ export const seedOpportunities: Opportunity[] = [
     subreddit: "SideProject",
     post_title: "What are you building this week? Share your side project",
     post_body: "Drop a link and tell us who it is for. Feedback welcome.",
-    post_url: "https://www.reddit.com/r/SideProject/",
+    post_url:
+      "https://www.reddit.com/r/SideProject/comments/1u70r9c/what_are_you_building_this_week_drop_your_project/",
     author: "community_builder",
     created_utc: new Date(Date.now() - 2 * 3600000).toISOString(),
     discovered_at: now,

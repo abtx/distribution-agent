@@ -33,6 +33,23 @@ describe("dashboard UI", () => {
       await screen.findByText(seedOpportunities[0].post_title),
     ).toBeInTheDocument();
     expect(screen.getByText("pending")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open/i })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/comments/"),
+    );
+  });
+
+  it("opens the specific Reddit post from opportunity details", () => {
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+      />,
+    );
+    expect(
+      screen.getByRole("link", { name: /open reddit post/i }),
+    ).toHaveAttribute("href", seedOpportunities[0].post_url);
+    expect(seedOpportunities[0].post_url).toContain("/comments/");
   });
   it("approve and reject work", async () => {
     const u = userEvent.setup();
