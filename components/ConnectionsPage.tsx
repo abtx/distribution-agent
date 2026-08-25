@@ -153,7 +153,7 @@ export function ConnectionsPage() {
         )}
       </section>
       <div className="notice">
-        After editing <code>.env.local</code>, restart the app, return here, and
+        After editing <code>.env</code>, restart the app, return here, and
         click Connect. OAuth tokens are stored in{" "}
         <code>.data/connections.json</code> with user-only file permissions.
       </div>

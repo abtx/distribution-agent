@@ -1,7 +1,10 @@
 import { NextResponse } from "@/lib/http";
 
 export async function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+  const requestUrl = new URL(request.url);
+  const origin = requestUrl.origin;
+  const xOrigin = new URL(origin);
+  xOrigin.hostname = "127.0.0.1";
   return NextResponse.json({
     reddit: {
       configured: Boolean(
@@ -19,7 +22,7 @@ export async function GET(request: Request) {
       configured: Boolean(process.env.X_CLIENT_ID),
       callbackUrl:
         process.env.X_REDIRECT_URI ||
-        "http://127.0.0.1:3000/api/connections/x/callback",
+        `${xOrigin.origin}/api/connections/x/callback`,
       missing: [!process.env.X_CLIENT_ID && "X_CLIENT_ID"].filter(Boolean),
     },
   });

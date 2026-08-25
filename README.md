@@ -39,6 +39,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). With no external credentials, the app starts in local demo mode with seeded products and mock Reddit discovery.
 
+If port 3000 is occupied, startup automatically tries 3001, 3002, and subsequent ports, then prints the selected URL. OAuth setup guidance in the app reflects the active port unless an explicit redirect URI is configured in `.env`.
+
 Never commit `.env` or `.data/`. Both are ignored by Git.
 
 ## Safety model

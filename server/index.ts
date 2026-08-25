@@ -25,6 +25,7 @@ import * as strategy from "@/app/api/strategy/route";
 import * as strategyContext from "@/app/api/strategy/context/route";
 import * as videos from "@/app/api/videos/route";
 import * as video from "@/app/api/videos/[filename]/route";
+import { listenWithPortFallback } from "./port";
 
 type Handler = (request: Request, context: any) => Promise<Response>;
 const app = express();
@@ -101,7 +102,12 @@ async function start() {
     });
     app.use(vite.middlewares);
   }
-  app.listen(port, "127.0.0.1", () => console.log(`Distribution Agent is running at http://localhost:${port}`));
+  const listening = await listenWithPortFallback(app, port);
+  if (listening.port !== port)
+    console.log(`Port ${port} is already in use - using ${listening.port} instead.`);
+  console.log(
+    `Distribution Agent is running at http://localhost:${listening.port}`,
+  );
 }
 
 void start().catch((error) => {
