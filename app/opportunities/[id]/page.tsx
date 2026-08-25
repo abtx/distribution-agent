@@ -13,5 +13,15 @@ export default async function Page({
   ]);
   const opportunity = opportunities.find((o) => o.id === id);
   if (!opportunity) notFound();
-  return <OpportunityDetail initial={opportunity} products={products} />;
+  const index = opportunities.findIndex((item) => item.id === id);
+  return (
+    <OpportunityDetail
+      initial={opportunity}
+      products={products}
+      previousId={index > 0 ? opportunities[index - 1].id : null}
+      nextId={index < opportunities.length - 1 ? opportunities[index + 1].id : null}
+      position={index + 1}
+      total={opportunities.length}
+    />
+  );
 }

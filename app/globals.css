@@ -416,6 +416,35 @@ th:nth-child(5) {
   gap: 5px;
   margin-bottom: 8px;
 }
+.review-nav {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+}
+.review-nav a,
+.review-nav span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.review-nav span[aria-disabled="true"] {
+  color: #9da5a1;
+  background: #f2f4f3;
+}
+.review-nav small {
+  color: var(--muted);
+  min-width: 42px;
+  text-align: center;
+}
 .actions {
   display: flex;
   gap: 8px;

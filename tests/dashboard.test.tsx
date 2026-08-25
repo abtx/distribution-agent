@@ -5,8 +5,13 @@ import userEvent from "@testing-library/user-event";
 import { Dashboard } from "@/components/Dashboard";
 import { OpportunityDetail } from "@/components/OpportunityDetail";
 import { seedOpportunities, seedProducts } from "@/lib/seed";
-vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+const navigation = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ push: navigation.push }),
+}));
 beforeEach(() => {
+  navigation.push.mockReset();
   global.fetch = vi.fn(async (input, init) => {
     if (String(input) === "/api/dashboard")
       return new Response(
@@ -50,6 +55,34 @@ describe("dashboard UI", () => {
       screen.getByRole("link", { name: /open reddit post/i }),
     ).toHaveAttribute("href", seedOpportunities[0].post_url);
     expect(seedOpportunities[0].post_url).toContain("/comments/");
+  });
+  it("navigates between opportunities with controls and arrow keys", async () => {
+    const u = userEvent.setup();
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+        previousId="previous-id"
+        nextId="next-id"
+        position={2}
+        total={3}
+      />,
+    );
+    expect(screen.getByRole("link", { name: /previous opportunity/i })).toHaveAttribute(
+      "href",
+      "/opportunities/previous-id",
+    );
+    expect(screen.getByRole("link", { name: /next opportunity/i })).toHaveAttribute(
+      "href",
+      "/opportunities/next-id",
+    );
+    expect(screen.getByText("2 of 3")).toBeInTheDocument();
+
+    await u.keyboard("{ArrowRight}");
+    expect(navigation.push).toHaveBeenCalledWith("/opportunities/next-id");
+    await u.click(screen.getByLabelText("Proposed reply"));
+    await u.keyboard("{ArrowLeft}");
+    expect(navigation.push).toHaveBeenCalledTimes(1);
   });
   it("approve and reject work", async () => {
     const u = userEvent.setup();

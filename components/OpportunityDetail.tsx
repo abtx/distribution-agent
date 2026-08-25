@@ -1,18 +1,36 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, ExternalLink, RefreshCw, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import type { Opportunity, Product } from "@/lib/types";
 import { Shell } from "./Shell";
 export function OpportunityDetail({
   initial,
   products: suppliedProducts,
   product,
+  previousId = null,
+  nextId = null,
+  position,
+  total,
 }: {
   initial: Opportunity;
   products?: Product[];
   product?: Product;
+  previousId?: string | null;
+  nextId?: string | null;
+  position?: number;
+  total?: number;
 }) {
+  const router = useRouter();
   const products = suppliedProducts || (product ? [product] : []);
   const [op, setOp] = useState(initial),
     [text, setText] = useState(initial.edited_reply || initial.proposed_reply),
@@ -21,6 +39,31 @@ export function OpportunityDetail({
     [selectedProductIds, setSelectedProductIds] = useState(
       initial.matched_product_ids || [initial.matched_product_id],
     );
+  useEffect(() => {
+    const navigate = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target?.isContentEditable ||
+        target?.matches("input, textarea, select")
+      )
+        return;
+      const destination =
+        event.key === "ArrowLeft"
+          ? previousId
+          : event.key === "ArrowRight"
+            ? nextId
+            : null;
+      if (!destination) return;
+      event.preventDefault();
+      router.push(`/opportunities/${destination}`);
+    };
+    window.addEventListener("keydown", navigate);
+    return () => window.removeEventListener("keydown", navigate);
+  }, [nextId, previousId, router]);
   const update = async (patch: Partial<Opportunity>) => {
     setSaving(true);
     setMessage("");
@@ -77,6 +120,31 @@ export function OpportunityDetail({
             <ArrowLeft size={15} /> All opportunities
           </Link>
           <h1>Review opportunity</h1>
+          <nav className="review-nav" aria-label="Opportunity navigation">
+            {previousId ? (
+              <Link href={`/opportunities/${previousId}`} aria-label="Previous opportunity">
+                <ChevronLeft size={15} /> Previous
+              </Link>
+            ) : (
+              <span aria-disabled="true">
+                <ChevronLeft size={15} /> Previous
+              </span>
+            )}
+            {position && total ? (
+              <small>
+                {position} of {total}
+              </small>
+            ) : null}
+            {nextId ? (
+              <Link href={`/opportunities/${nextId}`} aria-label="Next opportunity">
+                Next <ChevronRight size={15} />
+              </Link>
+            ) : (
+              <span aria-disabled="true">
+                Next <ChevronRight size={15} />
+              </span>
+            )}
+          </nav>
         </div>
         <div className="actions">
           <button
