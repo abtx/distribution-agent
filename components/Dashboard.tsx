@@ -2,7 +2,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "@/lib/navigation";
 import { useRouter } from "@/lib/navigation";
-import { ExternalLink, Play, Search, SlidersHorizontal } from "lucide-react";
+import {
+  ExternalLink,
+  LoaderCircle,
+  Play,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
 import type { DiscoveryRun, Opportunity, Product } from "@/lib/types";
 import { Shell } from "./Shell";
 function age(s: string) {
@@ -97,10 +103,26 @@ export function Dashboard() {
           </p>
         </div>
         <button className="primary" disabled={running} onClick={run}>
-          <Play size={15} fill="currentColor" />
+          {running ? (
+            <LoaderCircle className="spinner" size={16} />
+          ) : (
+            <Play size={15} fill="currentColor" />
+          )}
           {running ? "Running discovery…" : "Run discovery now"}
         </button>
       </header>
+      {running && (
+        <div className="discovery-progress" role="status" aria-live="polite">
+          <LoaderCircle className="spinner" size={21} />
+          <div>
+            <b>Discovery is running in the background</b>
+            <span>
+              Searching and qualifying new Reddit opportunities. You can keep
+              using the app while this finishes.
+            </span>
+          </div>
+        </div>
+      )}
       <section className="stats">
         <Stat
           n={ops.filter((o) => o.status === "pending").length}

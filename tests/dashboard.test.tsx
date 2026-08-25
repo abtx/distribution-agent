@@ -44,6 +44,40 @@ describe("dashboard UI", () => {
       expect.stringContaining("/comments/"),
     );
   });
+  it("shows an animated background status while discovery is running", async () => {
+    let finishDiscovery!: (response: Response) => void;
+    const discovery = new Promise<Response>((resolve) => {
+      finishDiscovery = resolve;
+    });
+    global.fetch = vi.fn(async (input, init) => {
+      if (String(input) === "/api/discovery" && init?.method === "POST")
+        return discovery;
+      if (String(input) === "/api/dashboard")
+        return new Response(
+          JSON.stringify({
+            opportunities: seedOpportunities,
+            products: seedProducts,
+            runs: [],
+          }),
+        );
+      return new Response("{}");
+    }) as typeof fetch;
+    const user = userEvent.setup();
+    render(<Dashboard />);
+    await screen.findByText(seedOpportunities[0].post_title);
+
+    await user.click(screen.getByRole("button", { name: "Run discovery now" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Discovery is running in the background",
+    );
+    expect(
+      screen.getByRole("button", { name: /running discovery/i }),
+    ).toBeDisabled();
+
+    finishDiscovery(new Response("{}"));
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+  });
   it("opens an opportunity from the entire table row", async () => {
     const u = userEvent.setup();
     render(<Dashboard />);

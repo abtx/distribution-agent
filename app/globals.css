@@ -185,6 +185,33 @@ button:disabled {
   color: #a83622;
   border: 1px solid #f7cabf;
 }
+.spinner {
+  animation: spin 850ms linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.discovery-progress {
+  align-items: center;
+  background: var(--lime);
+  border: 1px solid #b9cb31;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--ink);
+  display: flex;
+  gap: 12px;
+  margin: -10px 0 24px;
+  padding: 13px 15px;
+}
+.discovery-progress div {
+  display: grid;
+}
+.discovery-progress b {
+  font-size: 13px;
+}
+.discovery-progress span {
+  color: #4d531f;
+  font-size: 12px;
+}
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(90px, 1fr)) 1.6fr;
