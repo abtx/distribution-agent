@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, LoaderCircle, Plus, Radar, Trash2 } from "lucide-react";
+import { Check, ExternalLink, LoaderCircle, Plus, Radar, Trash2 } from "lucide-react";
+import Link from "@/lib/navigation";
 import { Shell } from "./Shell";
 import type { DiscoveryChannel, DiscoverySource, SourceSuggestion } from "@/lib/types";
 
@@ -57,7 +58,7 @@ export function SourcesPage() {
   }
 
   return <Shell>
-    <header><div><p className="eyebrow">DISCOVERY SETTINGS</p><h1>Sources</h1><p className="muted">Choose where Distribution Agent looks for useful conversations.</p></div></header>
+    <header><div><p className="eyebrow">DISCOVERY SETTINGS</p><h1>Sources</h1><p className="muted">Choose where Distribution Agent looks for useful conversations.</p></div><Link className="primary" href="/sources/review">Review watchlist <ExternalLink size={15}/></Link></header>
     <div className="source-tabs" role="tablist">
       <button className={channel === "reddit" ? "active" : ""} onClick={() => { setChannel("reddit"); setSuggestions([]); }}>Reddit communities</button>
       <button className={channel === "x" ? "active" : ""} onClick={() => { setChannel("x"); setSuggestions([]); }}>X accounts</button>

@@ -9,6 +9,7 @@ Distribution Agent is a local-first, human-controlled marketing workspace. It fi
 
 - Conservative Reddit opportunity discovery with duplicate prevention.
 - Editable Reddit community and X account watchlists with product-aware source suggestions.
+- Guided Reddit watchlist review with manual post capture when API access is unavailable.
 - Multi-product matching and combined “I’m building X and Y” replies.
 - Human review, editing, approve/reject, and explicit publish confirmation.
 - OAuth connections for Reddit and X with server-only token storage and refresh.
@@ -62,6 +63,8 @@ Never commit `.env` or `.data/`. Both are ignored by Git.
 RLS is enabled on every application table. Authenticated users may manage products and opportunities; discovery runs are readable to authenticated users. Server jobs should use the service-role key, which must never be exposed in the browser.
 
 The zero-credential local demo uses an in-process repository so the app and tests remain usable without cloud access. Production should configure Supabase; the schema is the durable source of truth.
+
+When Reddit API access is unavailable, open **Sources → Review watchlist**. The guided review remembers your place, opens each enabled community's newest-posts page for normal manual browsing, and accepts a specific post URL, title, and body that you choose to paste. Distribution Agent then applies the same product matching, duplicate prevention, reply generation, and pending-review workflow without automatically fetching or scraping Reddit pages.
 
 ## Reddit, X, and OpenAI
 

@@ -7,6 +7,7 @@ import { ProductsPage } from "@/components/ProductsPage";
 import { StrategyPage } from "@/components/StrategyPage";
 import { VideosPage } from "@/components/VideosPage";
 import { SourcesPage } from "@/components/SourcesPage";
+import { WatchlistReviewPage } from "@/components/WatchlistReviewPage";
 import type { Opportunity, Product } from "@/lib/types";
 
 export function App() {
@@ -24,6 +25,7 @@ export function App() {
   if (path === "/products") return <ProductsPage />;
   if (path === "/strategy") return <StrategyPage />;
   if (path === "/sources") return <SourcesPage />;
+  if (path === "/sources/review") return <WatchlistReviewPage />;
   if (path === "/videos") return <VideosPage />;
   return <Dashboard />;
 }

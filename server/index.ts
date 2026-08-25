@@ -19,6 +19,7 @@ import * as opportunity from "@/app/api/opportunities/[id]/route";
 import * as opportunityPublish from "@/app/api/opportunities/[id]/publish/route";
 import * as opportunityReply from "@/app/api/opportunities/[id]/reply/route";
 import * as regenerate from "@/app/api/opportunities/regenerate/route";
+import * as importOpportunity from "@/app/api/opportunities/import/route";
 import * as products from "@/app/api/products/route";
 import * as product from "@/app/api/products/[id]/route";
 import * as strategy from "@/app/api/strategy/route";
@@ -81,6 +82,7 @@ route("get", "/api/cron/publish", cronPublish.GET as Handler);
 route("get", "/api/dashboard", dashboard.GET as Handler);
 route("post", "/api/discovery", discovery.POST as Handler);
 route("post", "/api/opportunities/regenerate", regenerate.POST as Handler);
+route("post", "/api/opportunities/import", importOpportunity.POST as Handler);
 route("patch", "/api/opportunities/:id", opportunity.PATCH as Handler);
 route("post", "/api/opportunities/:id/publish", opportunityPublish.POST as Handler);
 route("post", "/api/opportunities/:id/reply", opportunityReply.POST as Handler);
@@ -107,7 +109,7 @@ async function start() {
     app.get(/.*/, (_req, res) => res.sendFile(path.join(clientDirectory, "index.html")));
   } else {
     const vite = await (await import("vite")).createServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false },
       appType: "spa",
     });
     app.use(vite.middlewares);

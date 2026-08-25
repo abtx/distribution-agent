@@ -405,6 +405,20 @@ button:disabled {
 .suggestion-grid p { color: var(--muted); font-size: 12px; margin: 0; }
 .suggestion-grid span { color: var(--green); font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .suggestion-loading { align-items: center; color: var(--muted); display: flex; gap: 10px; padding: 20px 0; }
+.review-grid { display: grid; gap: 18px; grid-template-columns: minmax(260px, .7fr) minmax(420px, 1.3fr); }
+.community-review,
+.import-form { align-content: start; display: grid; gap: 16px; padding: 22px; }
+.community-review h2 { font-size: 28px; margin: 0; }
+.review-open { justify-content: center; margin-top: 4px; text-decoration: none; }
+.review-note { background: #f3f2e9; border-radius: 9px; color: var(--muted); font-size: 12px; margin: 0; padding: 13px; }
+.review-nav { display: flex; gap: 8px; justify-content: space-between; }
+.import-form label { color: var(--muted); display: grid; font-size: 11px; font-weight: 700; gap: 6px; }
+.import-form input,
+.import-form textarea { background: white; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); padding: 11px 12px; width: 100%; }
+.import-form textarea { min-height: 160px; resize: vertical; }
+.review-empty { align-items: center; display: grid; gap: 4px; min-height: 220px; place-content: center; text-align: center; }
+.review-empty span { color: var(--muted); }
+.review-empty a { color: var(--green); font-weight: 750; }
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(90px, 1fr)) 1.6fr;
@@ -1218,6 +1232,7 @@ dd {
   .run-list { max-height: 360px; }
   .source-panel-heading { display: grid; }
   .suggestion-grid { grid-template-columns: 1fr; }
+  .review-grid { grid-template-columns: 1fr; }
   .stat.wide {
     grid-column: 1/3;
   }
