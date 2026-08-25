@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { z } from "zod";
 import { generateReply } from "@/lib/ai/generateReply";
 import { repository } from "@/lib/repository";

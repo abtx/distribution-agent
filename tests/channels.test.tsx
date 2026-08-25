@@ -5,7 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { ContentPage } from "@/components/ContentPage";
 import { POST } from "@/app/api/content/route";
 import { seedProducts } from "@/lib/seed";
-vi.mock("next/navigation", () => ({ usePathname: () => "/content" }));
+vi.mock("@/lib/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/navigation")>()),
+  usePathname: () => "/content",
+}));
 describe("multi-channel content", () => {
   beforeEach(() => {
     history.replaceState({}, "", "/");

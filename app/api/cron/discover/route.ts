@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { runDiscovery } from "@/lib/discovery/runDiscovery";
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;

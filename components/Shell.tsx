@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/lib/navigation";
 import {
   Bot,
   Clapperboard,
@@ -10,7 +10,7 @@ import {
   Send,
   ShieldCheck,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/lib/navigation";
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   return (

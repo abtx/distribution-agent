@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { regenerateOpportunities } from "@/lib/opportunities/regenerate";
 
 export async function POST() {

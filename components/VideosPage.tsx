@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/lib/navigation";
 import { FileVideo, Plus, Upload } from "lucide-react";
 import { Shell } from "./Shell";
 import { ChannelBadge } from "./ChannelBadge";

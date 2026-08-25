@@ -2,7 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectionsPage } from "@/components/ConnectionsPage";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/connections" }));
+vi.mock("@/lib/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/navigation")>()),
+  usePathname: () => "/connections",
+}));
 
 describe("connection setup guide", () => {
   beforeEach(() => {

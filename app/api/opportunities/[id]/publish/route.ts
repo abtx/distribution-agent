@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { publishRedditComment } from "@/lib/publishing";
 import { repository } from "@/lib/repository";
 

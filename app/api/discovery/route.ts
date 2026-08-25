@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { runDiscovery } from "@/lib/discovery/runDiscovery";
 export async function POST() {
   try {

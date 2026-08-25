@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/navigation";
+import { useRouter } from "@/lib/navigation";
 import { ExternalLink, Play, Search, SlidersHorizontal } from "lucide-react";
 import type { DiscoveryRun, Opportunity, Product } from "@/lib/types";
 import { Shell } from "./Shell";

@@ -1,7 +1,5 @@
-import { loadEnvConfig } from "@next/env";
+import "dotenv/config";
 import { publishDueContent } from "../lib/publishContent";
-
-loadEnvConfig(process.cwd());
 
 async function main() {
   const results = await publishDueContent();

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 
 export async function GET(request: Request) {
   const origin = new URL(request.url).origin;

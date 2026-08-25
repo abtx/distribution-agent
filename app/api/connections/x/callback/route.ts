@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { connectionStore } from "@/lib/connections";
 
 function cookie(request: Request, name: string) {

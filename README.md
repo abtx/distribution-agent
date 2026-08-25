@@ -33,13 +33,13 @@ Requires Node.js 20 or newer.
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). With no external credentials, the app starts in local demo mode with seeded products and mock Reddit discovery.
 
-Never commit `.env.local` or `.data/`. Both are ignored by Git.
+Never commit `.env` or `.data/`. Both are ignored by Git.
 
 ## Safety model
 
@@ -78,7 +78,7 @@ Set `X_CLIENT_ID`, `X_REDIRECT_URI`, and `X_CLIENT_SECRET` when the X app is con
 
 X requires `127.0.0.1` rather than `localhost` for local callback URLs. Start the X connection from the in-app button; it switches to the matching host before setting the OAuth state cookie.
 
-Restart the app after changing `.env.local`, open **Connections**, and authorize each account. The app never exposes provider tokens through its browser API.
+Restart the app after changing `.env`, open **Connections**, and authorize each account. The app never exposes provider tokens through its browser API.
 
 Configure `OPENAI_API_KEY` to enable structured multi-product classification and combined reply generation. Without it, a deterministic classifier and combined reply generator support local use and tests.
 
@@ -86,7 +86,6 @@ Configure `OPENAI_API_KEY` to enable structured multi-product classification and
 
 Set a strong `CRON_SECRET`. Call `GET /api/cron/discover` for discovery and `GET /api/cron/publish` for due scheduled posts with `Authorization: Bearer <CRON_SECRET>`. Both endpoints reject missing or incorrect secrets. Discovery prevents overlapping runs; publishing uses cross-process item locks and per-channel receipts.
 
-- Vercel: configure cron jobs for `/api/cron/discover` and `/api/cron/publish`. When `CRON_SECRET` is configured, Vercel sends it as a Bearer authorization header. Use a timezone-aware external scheduler if exact Europe/London timing is required year-round.
 - Railway/generic cron: schedule `curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://YOUR_HOST/api/cron/discover` at `0 8 * * *` with the scheduler timezone set to `Europe/London`.
 
 ### Run automatically on a Mac
@@ -108,6 +107,8 @@ npm run build
 ```
 
 ## Architecture
+
+The browser app is React bundled by Vite. A small Express server serves both the production SPA and the framework-independent API handlers. Direct page refreshes use the SPA fallback, and development starts the API plus Vite live reload together with one `npm run dev` command. There is no Next.js runtime or generated `.next` state.
 
 Reddit discovery is behind `RedditProvider`; mock and OAuth implementations are swappable. Candidates are deduplicated before bounded-concurrency classification. Each candidate failure is isolated in run metadata. Zod validates every model response, and only explicit opportunities scoring at least 65 with at least one product match of 65 are saved. The database unique constraint prevents duplicate opportunities; publication receipts and item locks prevent duplicate channel posts during retries and concurrent workers.
 

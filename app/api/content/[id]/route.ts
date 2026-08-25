@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { z } from "zod";
 import { marketingStore } from "@/lib/marketingStore";
 const schema = z.object({

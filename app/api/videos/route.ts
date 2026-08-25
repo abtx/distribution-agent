@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 const maxSize = 500 * 1024 * 1024;
 export async function POST(req: Request) {
   const form = await req.formData(),

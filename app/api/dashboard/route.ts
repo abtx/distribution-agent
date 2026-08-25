@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { repository } from "@/lib/repository";
 export async function GET() {
   const [opportunities, products, runs] = await Promise.all([

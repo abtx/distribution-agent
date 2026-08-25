@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "outDir": "dist/server", "incremental": false },
+  "include": ["server/**/*.ts", "app/api/**/*.ts", "lib/**/*.ts"]
+}

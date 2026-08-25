@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 
 export async function GET(request: Request) {
   const clientId = process.env.X_CLIENT_ID;

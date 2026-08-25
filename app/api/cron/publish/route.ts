@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { publishDueContent } from "@/lib/publishContent";
 
 export async function GET(request: Request) {

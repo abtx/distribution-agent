@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { z } from "zod";
 import { marketingStore } from "@/lib/marketingStore";
 import type { ContentItem } from "@/lib/types";

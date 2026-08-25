@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { marketingStore } from "@/lib/marketingStore";
 export async function GET() {
   const latest = (await marketingStore.strategies())[0];

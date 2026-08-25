@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "@/lib/http";
 import { repository } from "@/lib/repository";
 import { z } from "zod";
 import { regenerateOpportunities } from "@/lib/opportunities/regenerate";

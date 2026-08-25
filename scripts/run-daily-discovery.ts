@@ -6,10 +6,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { loadEnvConfig } from "@next/env";
+import "dotenv/config";
 import { runDiscovery } from "../lib/discovery/runDiscovery";
 import { currentDiscoverySlot } from "../lib/discovery/schedule";
-loadEnvConfig(process.cwd());
 const dataDir = path.join(process.cwd(), ".data"),
   markerFile = path.join(dataDir, "last-scheduled-discovery.json");
 async function main() {

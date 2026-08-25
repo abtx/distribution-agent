@@ -6,7 +6,8 @@ import { Dashboard } from "@/components/Dashboard";
 import { OpportunityDetail } from "@/components/OpportunityDetail";
 import { seedOpportunities, seedProducts } from "@/lib/seed";
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
-vi.mock("next/navigation", () => ({
+vi.mock("@/lib/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/navigation")>()),
   usePathname: () => "/",
   useRouter: () => ({ push: navigation.push }),
 }));
