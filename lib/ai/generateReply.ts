@@ -7,8 +7,8 @@ export async function generateReply(post: RedditPost, products: Product[]) {
     const positioning = (product: Product) =>
       (product.description.trim() || product.one_liner).slice(0, 240);
     return products.length === 1
-      ? `I’m building ${products[0].name} — ${positioning(products[0])} ${products[0].preferred_cta}: ${products[0].url}`
-      : `I’m building a couple of things:\n\n${products.map((product) => `• ${product.name} — ${positioning(product)} ${product.url}`).join("\n")}\n\nI’d love to hear which one is most useful to you.`;
+      ? `I’m building ${products[0].name} - ${positioning(products[0])} ${products[0].preferred_cta}: ${products[0].url}`
+      : `I’m building a couple of things:\n\n${products.map((product) => `• ${product.name} - ${positioning(product)} ${product.url}`).join("\n")}\n\nI’d love to hear which one is most useful to you.`;
   }
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -22,7 +22,7 @@ export async function generateReply(post: RedditPost, products: Product[]) {
       {
         role: "system",
         content:
-          "Write one short human Reddit reply as JSON {reply}. Contextual, factual, no hashtags, no fake claims, no hype. Mention being the builder and naturally combine every supplied product with its link. Do not imply the products are one product.",
+          "Write one short human Reddit reply as JSON {reply}. Contextual, factual, no hashtags, no fake claims, no hype. Mention being the builder and naturally combine every supplied product with its link. Do not imply the products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
       },
       { role: "user", content: JSON.stringify({ post, products }) },
     ],

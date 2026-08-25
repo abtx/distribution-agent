@@ -1,8 +1,9 @@
 .mode {
   display: flex;
-  background: #e9eeeb;
-  padding: 3px;
-  border-radius: 9px;
+  background: #e7e6df;
+  padding: 4px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
 }
 .mode button {
   border: 0;
@@ -16,18 +17,19 @@
   cursor: pointer;
 }
 .mode button.selected {
-  background: white;
-  color: var(--green);
-  box-shadow: 0 1px 4px #0001;
+  background: #171916;
+  color: white;
+  box-shadow: 2px 2px 0 var(--lime);
   font-weight: 700;
 }
 .contentgrid {
   display: grid;
   grid-template-columns: minmax(380px, 0.85fr) minmax(480px, 1.35fr);
-  gap: 14px;
+  gap: 16px;
+  min-width: 0;
 }
 .composer {
-  padding: 22px;
+  padding: 24px;
   display: grid;
   gap: 14px;
   align-self: start;
@@ -74,6 +76,8 @@
 }
 .channelchoices input {
   position: absolute;
+  width: 1px;
+  height: 1px;
   opacity: 0;
   pointer-events: none;
 }
@@ -82,7 +86,7 @@
 }
 .channel {
   display: inline-flex;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 800;
@@ -122,12 +126,12 @@
   font-size: 11px;
 }
 .drop {
-  border: 1px dashed #b8c9c1;
-  border-radius: 9px;
+  border: 1px dashed #aeb4ad;
+  border-radius: 11px;
   padding: 18px !important;
   text-align: center;
   place-items: center;
-  background: #f8fbf9;
+  background: #f6f6ef;
   cursor: pointer;
 }
 .drop span {
@@ -143,6 +147,7 @@
 }
 .queue {
   overflow: hidden;
+  min-width: 0;
 }
 .queuehead {
   padding: 19px;
@@ -152,8 +157,11 @@
   display: grid;
   grid-template-columns: 38px 1fr auto;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--line);
+}
+.queueitem > div:nth-child(2) {
+  min-width: 0;
 }
 .queueitem p {
   margin: 4px 0 9px;
@@ -168,8 +176,8 @@
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: #edf5f1;
-  color: var(--green);
+  background: var(--lime);
+  color: var(--ink);
   display: grid;
   place-items: center;
 }
@@ -258,8 +266,8 @@
 }
 .strategytitle button {
   border: 0;
-  background: #edf5f1;
-  color: var(--green);
+  background: var(--lime);
+  color: var(--ink);
   border-radius: 7px;
   padding: 6px;
 }

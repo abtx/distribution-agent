@@ -204,7 +204,7 @@ export function OpportunityDetail({
                     (id) => products.find((product) => product.id === id)?.name,
                   )
                   .filter(Boolean)
-                  .join(", ") || "—"}
+                  .join(", ") || "-"}
               </dd>
             </div>
             <div>

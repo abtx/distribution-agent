@@ -62,7 +62,7 @@ export const seedOpportunities: Opportunity[] = [
     ],
     match_score: 88,
     proposed_reply:
-      "I’m building a couple of things:\n\n• ReelBlocks — a desktop video editor built around a visual canvas. https://example.com/reelblocks\n• Fluentish — a language-learning tool for practical speaking practice. https://example.com/fluentish\n\nI’d love to hear which one is most useful to you.",
+      "I’m building a couple of things:\n\n• ReelBlocks - a desktop video editor built around a visual canvas. https://example.com/reelblocks\n• Fluentish - a language-learning tool for practical speaking practice. https://example.com/fluentish\n\nI’d love to hear which one is most useful to you.",
     edited_reply: null,
     status: "pending",
     source: "mock",
