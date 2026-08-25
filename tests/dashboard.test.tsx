@@ -139,4 +139,22 @@ describe("dashboard UI", () => {
     await u.click(screen.getByRole("button", { name: "Save edit" }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
   });
+  it("copies the current reply text", async () => {
+    const u = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+      />,
+    );
+
+    await u.click(screen.getByRole("button", { name: /copy reply/i }));
+    expect(writeText).toHaveBeenCalledWith(seedOpportunities[0].proposed_reply);
+    expect(screen.getByText(/copied to clipboard/i)).toBeInTheDocument();
+  });
 });

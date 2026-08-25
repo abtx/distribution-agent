@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   ExternalLink,
   RefreshCw,
   X,
@@ -118,6 +119,14 @@ export function OpportunityDetail({
     setOp(data);
     setText(data.proposed_reply);
     setMessage("Combined reply generated");
+  };
+  const copyReply = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage("Copied to clipboard");
+    } catch {
+      setMessage("Could not copy to clipboard");
+    }
   };
   const publish = async () => {
     if (
@@ -283,16 +292,21 @@ export function OpportunityDetail({
             <span>
               {text.length} characters {message && `· ${message}`}
             </span>
-            <button
-              disabled={
-                saving ||
-                text === op.edited_reply ||
-                (!op.edited_reply && text === op.proposed_reply)
-              }
-              onClick={() => update({ edited_reply: text })}
-            >
-              Save edit
-            </button>
+            <div className="editor-actions">
+              <button type="button" onClick={copyReply}>
+                <Copy size={13} /> Copy reply
+              </button>
+              <button
+                disabled={
+                  saving ||
+                  text === op.edited_reply ||
+                  (!op.edited_reply && text === op.proposed_reply)
+                }
+                onClick={() => update({ edited_reply: text })}
+              >
+                Save edit
+              </button>
+            </div>
           </div>
           <div className="notice">
             Done marks this approved but does not publish it. Open the Approved

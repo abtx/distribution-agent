@@ -581,6 +581,16 @@ dd {
   border-radius: 7px;
   padding: 7px 10px;
 }
+.editor-actions {
+  display: flex;
+  gap: 7px;
+}
+.editor-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
 .notice {
   background: #f2f6f4;
   color: #547064;
