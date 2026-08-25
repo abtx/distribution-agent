@@ -315,7 +315,7 @@ export function OpportunityDetail({
             </div>
           </div>
           <div className="notice">
-            Done marks this approved but does not publish it. Open the Approved
+            Done completes the review but does not publish it. Open the Done
             list when you are ready to use “Post to Reddit” and confirm the
             public action.
           </div>

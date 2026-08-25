@@ -17,7 +17,7 @@ export async function POST(
     );
   if (opportunity.status !== "approved")
     return NextResponse.json(
-      { error: "Approve the reply before publishing" },
+      { error: "Mark the review Done before publishing" },
       { status: 409 },
     );
   const text = opportunity.edited_reply || opportunity.proposed_reply;

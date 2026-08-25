@@ -144,7 +144,7 @@ export function Dashboard() {
         />
         <Stat
           n={ops.filter((o) => o.status === "approved").length}
-          label="Approved"
+          label="Done"
           tone="green"
         />
         <Stat
@@ -168,13 +168,18 @@ export function Dashboard() {
       <section className="panel">
         <div className="filters">
           <div className="tabs">
-            {["all", "pending", "approved", "rejected"].map((x) => (
+            {[
+              { value: "all", label: "All" },
+              { value: "pending", label: "Pending" },
+              { value: "approved", label: "Done" },
+              { value: "rejected", label: "Rejected" },
+            ].map((item) => (
               <button
-                key={x}
-                onClick={() => setStatus(x)}
-                className={status === x ? "selected" : ""}
+                key={item.value}
+                onClick={() => setStatus(item.value)}
+                className={status === item.value ? "selected" : ""}
               >
-                {x[0].toUpperCase() + x.slice(1)}
+                {item.label}
               </button>
             ))}
           </div>
@@ -312,7 +317,9 @@ export function Dashboard() {
                         </p>
                       </td>
                       <td>
-                        <span className={`chip ${o.status}`}>{o.status}</span>
+                        <span className={`chip ${o.status}`}>
+                          {o.status === "approved" ? "done" : o.status}
+                        </span>
                       </td>
                     </tr>
                   );

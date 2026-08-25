@@ -44,6 +44,26 @@ describe("dashboard UI", () => {
       expect.stringContaining("/comments/"),
     );
   });
+  it("uses Done consistently for completed reviews", async () => {
+    const user = userEvent.setup();
+    global.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          opportunities: [
+            { ...seedOpportunities[0], status: "approved" as const },
+          ],
+          products: seedProducts,
+          runs: [],
+        }),
+      ),
+    ) as typeof fetch;
+    render(<Dashboard />);
+
+    await user.click(await screen.findByRole("button", { name: "Done" }));
+
+    expect(screen.getByText("done")).toBeInTheDocument();
+    expect(screen.queryByText("approved")).not.toBeInTheDocument();
+  });
   it("shows an animated background status while discovery is running", async () => {
     let finishDiscovery!: (response: Response) => void;
     const discovery = new Promise<Response>((resolve) => {
