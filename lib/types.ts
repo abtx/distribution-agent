@@ -65,6 +65,22 @@ export interface RedditPost {
   createdUtc: string;
   score?: number;
   comments?: number;
+  platform?: "reddit" | "x";
+}
+export type DiscoveryChannel = "reddit" | "x";
+export interface DiscoverySource {
+  id: string;
+  channel: DiscoveryChannel;
+  name: string;
+  enabled: boolean;
+  reason: string;
+  created_at: string;
+}
+export interface SourceSuggestion {
+  channel: DiscoveryChannel;
+  name: string;
+  reason: string;
+  relevance: number;
 }
 export interface Classification {
   isPromotionOpportunity: boolean;

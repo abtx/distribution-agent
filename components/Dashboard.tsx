@@ -219,7 +219,7 @@ export function Dashboard() {
             value={subreddit}
             onChange={(e) => setSubreddit(e.target.value)}
           >
-            <option value="all">All subreddits</option>
+            <option value="all">All sources</option>
             {[...new Set(ops.map((o) => o.subreddit))].map((s) => (
               <option key={s}>{s}</option>
             ))}
@@ -251,7 +251,7 @@ export function Dashboard() {
               <thead>
                 <tr>
                   <th>Score</th>
-                  <th>Reddit post</th>
+                  <th>Source post</th>
                   <th>Product</th>
                   <th>Proposed reply</th>
                   <th>Status</th>
@@ -301,7 +301,7 @@ export function Dashboard() {
                           {o.post_title}
                         </Link>
                         <div className="meta">
-                          r/{o.subreddit} · {age(o.created_utc)} ·{" "}
+                          {o.source === "x_api" ? o.subreddit : `r/${o.subreddit}`} · {age(o.created_utc)} ·{" "}
                           <a href={o.post_url} target="_blank" rel="noreferrer">
                             Open <ExternalLink size={11} />
                           </a>

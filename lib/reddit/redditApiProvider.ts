@@ -31,6 +31,7 @@ const queries = [
   "share your side project",
 ];
 export class RedditApiProvider implements RedditProvider {
+  constructor(private readonly subreddits: string[] = []) {}
   async searchOpportunities(): Promise<RedditPost[]> {
     const id = process.env.REDDIT_CLIENT_ID,
       secret = process.env.REDDIT_CLIENT_SECRET,
@@ -51,9 +52,12 @@ export class RedditApiProvider implements RedditProvider {
       throw new Error(`Reddit authentication failed (${tokenRes.status})`);
     const token = ((await tokenRes.json()) as { access_token: string })
       .access_token;
-    const search = async (q: string) => {
+    const search = async (q: string, subreddit?: string) => {
+      const endpoint = subreddit
+        ? `https://oauth.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(q)}&restrict_sr=on&sort=new&t=week&limit=25`
+        : `https://oauth.reddit.com/search.json?q=${encodeURIComponent(q)}&sort=new&t=week&limit=25`;
       const r = await fetch(
-        `https://oauth.reddit.com/search.json?q=${encodeURIComponent(q)}&sort=new&t=week&limit=25`,
+        endpoint,
         {
           headers: { Authorization: `Bearer ${token}`, "User-Agent": agent },
           signal: AbortSignal.timeout(10000),
@@ -74,8 +78,10 @@ export class RedditApiProvider implements RedditProvider {
       }));
     };
     const results: RedditPost[][] = [];
-    for (let i = 0; i < queries.length; i += 3)
-      results.push(...(await Promise.all(queries.slice(i, i + 3).map(search))));
+    const targets = this.subreddits.length ? this.subreddits : [undefined];
+    const searches = targets.flatMap((subreddit) => queries.map((query) => ({ query, subreddit })));
+    for (let i = 0; i < searches.length; i += 3)
+      results.push(...(await Promise.all(searches.slice(i, i + 3).map(({ query, subreddit }) => search(query, subreddit)))));
     return [...new Map(results.flat().map((p) => [p.id, p])).values()];
   }
 }

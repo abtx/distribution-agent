@@ -6,6 +6,7 @@ import { OpportunityDetail } from "@/components/OpportunityDetail";
 import { ProductsPage } from "@/components/ProductsPage";
 import { StrategyPage } from "@/components/StrategyPage";
 import { VideosPage } from "@/components/VideosPage";
+import { SourcesPage } from "@/components/SourcesPage";
 import type { Opportunity, Product } from "@/lib/types";
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
   if (path === "/content") return <ContentPage />;
   if (path === "/products") return <ProductsPage />;
   if (path === "/strategy") return <StrategyPage />;
+  if (path === "/sources") return <SourcesPage />;
   if (path === "/videos") return <VideosPage />;
   return <Dashboard />;
 }

@@ -207,7 +207,7 @@ export function OpportunityDetail({
         <section className="card">
           <p className="eyebrow">ORIGINAL POST</p>
           <div className="meta">
-            r/{op.subreddit} · u/{op.author}
+            {op.source === "x_api" ? `${op.subreddit} · @${op.author}` : `r/${op.subreddit} · u/${op.author}`}
           </div>
           <h2>{op.post_title}</h2>
           <p className="postbody">{op.post_body || "No post body provided."}</p>
@@ -217,7 +217,7 @@ export function OpportunityDetail({
             target="_blank"
             rel="noreferrer"
           >
-            Open Reddit post <ExternalLink size={14} />
+            Open {op.source === "x_api" ? "X" : "Reddit"} post <ExternalLink size={14} />
           </a>
         </section>
         <section className="card analysis">

@@ -105,7 +105,7 @@ export async function generateReply(post: RedditPost, products: Product[]) {
       {
         role: "system",
         content:
-          "Write one human Reddit reply as JSON {reply}. The Reddit post body is authoritative. Detect and strictly follow every requested reply field, heading, order, template, and formatting example. If a requested fact is unavailable, say so briefly rather than inventing it. Otherwise be short, contextual, factual, with no hashtags, fake claims, or hype. Mention being the builder and include every supplied product with its link. Do not imply separate products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
+          "Write one human social reply as JSON {reply}. The source post body is authoritative. Detect and strictly follow every requested reply field, heading, order, template, and formatting example. If a requested fact is unavailable, say so briefly rather than inventing it. Otherwise be short, contextual, factual, with no hashtags, fake claims, or hype. Mention being the builder and include every supplied product with its link. For X, lead with a useful response to the post and avoid sounding like an unsolicited pitch. Do not imply separate products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
       },
       { role: "user", content: JSON.stringify({ post, products }) },
     ],

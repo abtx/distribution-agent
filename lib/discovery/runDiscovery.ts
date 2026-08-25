@@ -5,6 +5,8 @@ import { MockRedditProvider } from "../reddit/mockProvider";
 import { RedditApiProvider } from "../reddit/redditApiProvider";
 import type { RedditProvider } from "../reddit/provider";
 import { repository } from "../repository";
+import { marketingStore } from "../marketingStore";
+import { XApiProvider } from "../x/xApiProvider";
 import type { DiscoveryRun, Opportunity } from "../types";
 let running = false;
 export async function runDiscovery(provider?: RedditProvider) {
@@ -22,12 +24,17 @@ export async function runDiscovery(provider?: RedditProvider) {
   };
   await repository.addRun(run);
   try {
-    const source =
-      provider ||
-      (process.env.USE_MOCK_REDDIT === "false"
-        ? new RedditApiProvider()
-        : new MockRedditProvider());
-    const posts = await source.searchOpportunities();
+    const configuredSources = await marketingStore.discoverySources();
+    const redditTargets = configuredSources.filter((item) => item.enabled && item.channel === "reddit").map((item) => item.name);
+    const xTargets = configuredSources.filter((item) => item.enabled && item.channel === "x").map((item) => item.name);
+    const source = provider || (process.env.USE_MOCK_REDDIT === "false" ? new RedditApiProvider(redditTargets) : new MockRedditProvider(redditTargets));
+    const results = await Promise.allSettled([
+      source.searchOpportunities(),
+      ...(xTargets.length ? [new XApiProvider(xTargets).searchOpportunities()] : []),
+    ]);
+    const posts = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+    (run.metadata.errors as string[]).push(...results.flatMap((result) => result.status === "rejected" ? [result.reason instanceof Error ? result.reason.message : String(result.reason)] : []));
+    run.metadata.sources = { reddit: redditTargets, x: xTargets };
     run.candidates_found = posts.length;
     const active = (await repository.products()).filter(
       (p) => p.status === "active",
@@ -87,8 +94,7 @@ export async function runDiscovery(provider?: RedditProvider) {
               proposed_reply: reply,
               edited_reply: null,
               status: "pending",
-              source:
-                source instanceof MockRedditProvider ? "mock" : "reddit_api",
+              source: post.platform === "x" ? "x_api" : source instanceof MockRedditProvider ? "mock" : "reddit_api",
               metadata: { confidence: c.confidence },
               created_at: now,
               updated_at: now,

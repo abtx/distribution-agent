@@ -8,6 +8,7 @@ Distribution Agent is a local-first, human-controlled marketing workspace. It fi
 ## Features
 
 - Conservative Reddit opportunity discovery with duplicate prevention.
+- Editable Reddit community and X account watchlists with product-aware source suggestions.
 - Multi-product matching and combined “I’m building X and Y” replies.
 - Human review, editing, approve/reject, and explicit publish confirmation.
 - OAuth connections for Reddit and X with server-only token storage and refresh.
@@ -112,7 +113,7 @@ npm run build
 
 The browser app is React bundled by Vite. A small Express server serves both the production SPA and the framework-independent API handlers. Direct page refreshes use the SPA fallback, and development starts the API plus Vite live reload together with one `npm run dev` command. There is no Next.js runtime or generated `.next` state.
 
-Reddit discovery is behind `RedditProvider`; mock and OAuth implementations are swappable. Candidates are deduplicated before bounded-concurrency classification. Each candidate failure is isolated in run metadata. Zod validates every model response, and only explicit opportunities scoring at least 65 with at least one product match of 65 are saved. The database unique constraint prevents duplicate opportunities; publication receipts and item locks prevent duplicate channel posts during retries and concurrent workers.
+Reddit discovery is behind `RedditProvider`; mock and OAuth implementations are swappable. The Sources screen controls which subreddits and X accounts are watched. With live access enabled, Reddit searches are restricted to enabled communities and X reads recent original posts from enabled accounts through the official API. Source-level failures are isolated in run metadata so one unavailable provider does not stop the other. Candidates are deduplicated before bounded-concurrency classification. Each candidate failure is isolated in run metadata. Zod validates every model response, and only opportunities scoring at least 65 with at least one product match of 65 are saved. The database unique constraint prevents duplicate opportunities; publication receipts and item locks prevent duplicate channel posts during retries and concurrent workers.
 
 ## Project status
 

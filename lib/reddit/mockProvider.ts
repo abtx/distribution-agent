@@ -1,8 +1,9 @@
 import type { RedditProvider } from "./provider";
 export class MockRedditProvider implements RedditProvider {
+  constructor(private readonly subreddits: string[] = []) {}
   async searchOpportunities() {
     const d = new Date().toISOString();
-    return [
+    const posts = [
       {
         id: "mock-share-startups-2026",
         subreddit: "startups",
@@ -34,5 +35,8 @@ export class MockRedditProvider implements RedditProvider {
         comments: 8,
       },
     ];
+    return this.subreddits.length
+      ? posts.filter((post) => this.subreddits.some((name) => name.toLowerCase() === post.subreddit.toLowerCase()))
+      : posts;
   }
 }

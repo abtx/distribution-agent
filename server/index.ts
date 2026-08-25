@@ -24,6 +24,9 @@ import * as product from "@/app/api/products/[id]/route";
 import * as strategy from "@/app/api/strategy/route";
 import * as strategyContext from "@/app/api/strategy/context/route";
 import * as videos from "@/app/api/videos/route";
+import * as sources from "@/app/api/sources/route";
+import * as source from "@/app/api/sources/[id]/route";
+import * as sourceSuggestions from "@/app/api/sources/suggestions/route";
 import * as video from "@/app/api/videos/[filename]/route";
 import { listenWithPortFallback } from "./port";
 
@@ -86,6 +89,11 @@ route("patch", "/api/products/:id", product.PATCH as Handler);
 route("get", "/api/strategy", strategy.GET as Handler);
 route("post", "/api/strategy", strategy.POST as Handler);
 route("get", "/api/strategy/context", strategyContext.GET as Handler);
+route("get", "/api/sources", sources.GET as Handler);
+route("post", "/api/sources", sources.POST as Handler);
+route("patch", "/api/sources/:id", source.PATCH as Handler);
+route("delete", "/api/sources/:id", source.DELETE as Handler);
+route("post", "/api/sources/suggestions", sourceSuggestions.POST as Handler);
 route("post", "/api/videos", videos.POST as Handler);
 route("get", "/api/videos/:filename", video.GET as Handler);
 

@@ -1,13 +1,14 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { ContentItem, StrategyDocument } from "./types";
+import type { ContentItem, DiscoverySource, StrategyDocument } from "./types";
 type MarketingState = {
   content: ContentItem[];
   strategies: StrategyDocument[];
+  discoverySources: DiscoverySource[];
 };
 const dataDir = path.join(process.cwd(), ".data"),
   dataFile = path.join(dataDir, "marketing.json");
-const empty: MarketingState = { content: [], strategies: [] };
+const empty: MarketingState = { content: [], strategies: [], discoverySources: [] };
 let writeQueue = Promise.resolve();
 async function read(): Promise<MarketingState> {
   try {
@@ -18,6 +19,7 @@ async function read(): Promise<MarketingState> {
       ...item,
       publications: item.publications || {},
     }));
+    state.discoverySources ||= [];
     return state;
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
@@ -69,5 +71,34 @@ export const marketingStore = {
     else state.strategies[i] = doc;
     await write(state);
     return doc;
+  },
+  async discoverySources() {
+    return (await read()).discoverySources;
+  },
+  async addDiscoverySource(source: DiscoverySource) {
+    const state = await read();
+    const duplicate = state.discoverySources.find(
+      (item) => item.channel === source.channel && item.name.toLowerCase() === source.name.toLowerCase(),
+    );
+    if (duplicate) return duplicate;
+    state.discoverySources.push(source);
+    await write(state);
+    return source;
+  },
+  async updateDiscoverySource(id: string, patch: Partial<DiscoverySource>) {
+    const state = await read();
+    const index = state.discoverySources.findIndex((item) => item.id === id);
+    if (index < 0) return null;
+    state.discoverySources[index] = { ...state.discoverySources[index], ...patch };
+    await write(state);
+    return state.discoverySources[index];
+  },
+  async removeDiscoverySource(id: string) {
+    const state = await read();
+    const next = state.discoverySources.filter((item) => item.id !== id);
+    if (next.length === state.discoverySources.length) return false;
+    state.discoverySources = next;
+    await write(state);
+    return true;
   },
 };

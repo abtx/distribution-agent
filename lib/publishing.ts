@@ -1,6 +1,6 @@
 import { connectionStore, type Connection, type Platform } from "./connections";
 
-async function requireConnection(platform: Platform) {
+export async function requireConnection(platform: Platform) {
   const connection = await connectionStore.get(platform);
   if (!connection)
     throw new Error(`${platform === "x" ? "X" : "Reddit"} is not connected`);

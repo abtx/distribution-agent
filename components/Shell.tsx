@@ -9,6 +9,7 @@ import {
   Plug,
   Send,
   ShieldCheck,
+  Radar,
 } from "lucide-react";
 import { usePathname } from "@/lib/navigation";
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -29,6 +30,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <nav>
           <Link className={path === "/" ? "active" : ""} href="/">
             <LayoutDashboard size={17} /> Opportunities
+          </Link>
+          <Link
+            className={path.startsWith("/sources") ? "active" : ""}
+            href="/sources"
+          >
+            <Radar size={17} /> Sources
           </Link>
           <Link
             className={path.startsWith("/content") ? "active" : ""}

@@ -16,7 +16,7 @@ export async function classifyOpportunity(
       {
         role: "system",
         content:
-          "Conservatively identify Reddit posts that explicitly invite product promotion. Return JSON only with isPromotionOpportunity, promotionExplicitlyAllowed, confidence (0-1), opportunityScore (0-100), reasoning, bestProductId, productMatchScore (0-100), and productMatches (every relevant active product as {productId, score}, highest score first). Never choose an inactive product.",
+          "Conservatively identify social posts where a genuine, useful product-related interaction is appropriate. Reddit posts must explicitly invite product promotion. X posts must provide a strong contextual opening for a relevant, non-spammy reply. Return JSON only with isPromotionOpportunity, promotionExplicitlyAllowed, confidence (0-1), opportunityScore (0-100), reasoning, bestProductId, productMatchScore (0-100), and productMatches (every relevant active product as {productId, score}, highest score first). Never choose an inactive product.",
       },
       {
         role: "user",
@@ -62,6 +62,8 @@ export function heuristicClassification(
     /(share|drop|showcase|show us|what are you building|what did you build|self.?promotion|post your|launch your)/.test(
       text,
     );
+  const xOpening = post.platform === "x" && /(launch|building|built|marketing|growth|language|learn|feedback|recommend|product)/.test(text);
+  const qualifies = invites || xOpening;
   const active = products.filter((p) => p.status === "active");
   const productMatches = active
     .map((p) => {
@@ -77,21 +79,21 @@ export function heuristicClassification(
       const hits = terms.filter((t) => text.includes(t)).length;
       return {
         productId: p.id,
-        score: Math.min(96, invites ? 70 + hits * 5 : hits * 8),
+        score: Math.min(96, qualifies ? 70 + hits * 5 : hits * 8),
       };
     })
     .filter((match) => match.score >= 65)
     .sort((a, b) => b.score - a.score);
   const best = productMatches[0];
   return {
-    isPromotionOpportunity: invites,
-    promotionExplicitlyAllowed: invites,
-    confidence: invites ? 0.9 : 0.8,
-    opportunityScore: invites
+    isPromotionOpportunity: qualifies,
+    promotionExplicitlyAllowed: qualifies,
+    confidence: qualifies ? 0.9 : 0.8,
+    opportunityScore: qualifies
       ? Math.min(95, 72 + Math.round((post.comments || 0) / 2))
       : 20,
-    reasoning: invites
-      ? "The post explicitly invites builders to share their products; an active product is relevant to the audience."
+    reasoning: qualifies
+      ? post.platform === "x" ? "The post creates a relevant opening for a useful, contextual interaction." : "The post explicitly invites builders to share their products; an active product is relevant to the audience."
       : "The post does not clearly invite product promotion.",
     bestProductId: best?.productId || null,
     productMatchScore: best?.score || 0,
