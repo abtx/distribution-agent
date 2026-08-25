@@ -27,6 +27,7 @@ import * as videos from "@/app/api/videos/route";
 import * as sources from "@/app/api/sources/route";
 import * as source from "@/app/api/sources/[id]/route";
 import * as sourceSuggestions from "@/app/api/sources/suggestions/route";
+import * as sourceStatus from "@/app/api/sources/status/route";
 import * as video from "@/app/api/videos/[filename]/route";
 import { listenWithPortFallback } from "./port";
 
@@ -94,6 +95,7 @@ route("post", "/api/sources", sources.POST as Handler);
 route("patch", "/api/sources/:id", source.PATCH as Handler);
 route("delete", "/api/sources/:id", source.DELETE as Handler);
 route("post", "/api/sources/suggestions", sourceSuggestions.POST as Handler);
+route("get", "/api/sources/status", sourceStatus.GET as Handler);
 route("post", "/api/videos", videos.POST as Handler);
 route("get", "/api/videos/:filename", video.GET as Handler);
 

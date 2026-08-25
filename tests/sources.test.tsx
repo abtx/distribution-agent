@@ -15,6 +15,8 @@ describe("discovery sources", () => {
       const url = String(input);
       if (url === "/api/sources" && !init)
         return new Response(JSON.stringify([{ id: "r1", channel: "reddit", name: "SideProject", enabled: true, reason: "Product showcase threads", created_at: "2026-01-01" }]));
+      if (url === "/api/sources/status")
+        return new Response(JSON.stringify({ reddit: { live: false, mode: "demo" }, x: { live: false } }));
       if (url === "/api/sources/suggestions") {
         const channel = JSON.parse(String(init?.body)).channel;
         return new Response(JSON.stringify(channel === "x"

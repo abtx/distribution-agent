@@ -370,13 +370,16 @@ function RunLog({
           </article>
         )}
         {runs.map((run) => {
-          const errors = Array.isArray(run.metadata.errors)
-            ? run.metadata.errors.length
-            : 0;
+          const candidateErrors = Array.isArray(run.metadata.errors) ? run.metadata.errors as string[] : [];
+          const providerErrors = Array.isArray(run.metadata.provider_errors) ? run.metadata.provider_errors as string[] : [];
+          const legacyProviderErrors = candidateErrors.filter((message) => /watchlist skipped|credentials|connect x/i.test(message));
+          const actualCandidateErrors = candidateErrors.filter((message) => !legacyProviderErrors.includes(message));
+          const warnings = [...providerErrors, ...legacyProviderErrors];
+          const modes = run.metadata.provider_modes as { reddit?: string } | undefined;
           return (
             <article className={`run-entry ${run.status}`} key={run.id}>
               <div className="run-entry-top">
-                <b>{run.status}</b>
+                <b>{run.status === "completed" && warnings.length ? "completed with warnings" : run.status}</b>
                 <time dateTime={run.started_at}>
                   {new Date(run.started_at).toLocaleString(undefined, {
                     day: "numeric",
@@ -390,11 +393,13 @@ function RunLog({
                 <div><dt>Candidates</dt><dd>{run.candidates_found}</dd></div>
                 <div><dt>Created</dt><dd>{run.opportunities_created}</dd></div>
               </dl>
+              {modes?.reddit === "demo" && <p className="run-warning">Demo Reddit data - watchlists were not searched.</p>}
               {run.status === "running" && <p>Discovery is still in progress.</p>}
               {run.error && <p className="run-error">{run.error}</p>}
-              {errors > 0 && (
+              {warnings.map((warning) => <p className="run-warning" key={warning}>{warning}</p>)}
+              {actualCandidateErrors.length > 0 && (
                 <p className="run-error">
-                  {errors} candidate {errors === 1 ? "error" : "errors"}
+                  {actualCandidateErrors.length} candidate {actualCandidateErrors.length === 1 ? "error" : "errors"}
                 </p>
               )}
             </article>

@@ -107,6 +107,21 @@ describe("dashboard UI", () => {
     expect(within(log).getByText("12")).toBeInTheDocument();
     expect(within(log).getByText("3")).toBeInTheDocument();
   });
+  it("distinguishes provider warnings from candidate errors", async () => {
+    global.fetch = vi.fn(async () => new Response(JSON.stringify({
+      opportunities: [], products: seedProducts, runs: [{
+        id: "partial-run", started_at: "2026-08-25T12:00:00.000Z", completed_at: "2026-08-25T12:00:01.000Z",
+        status: "completed", candidates_found: 2, opportunities_created: 0, error: null,
+        metadata: { errors: [], provider_errors: ["X watchlist skipped - connect X"], provider_modes: { reddit: "demo" } },
+      }],
+    }))) as typeof fetch;
+    render(<Dashboard />);
+    const log = await screen.findByLabelText("Discovery run log");
+    expect(within(log).getByText("Demo Reddit data - watchlists were not searched.")).toBeInTheDocument();
+    expect(within(log).getByText("X watchlist skipped - connect X")).toBeInTheDocument();
+    expect(within(log).getByText("completed with warnings")).toBeInTheDocument();
+    expect(within(log).queryByText(/candidate error/i)).not.toBeInTheDocument();
+  });
   it("shows an animated background status while discovery is running", async () => {
     let finishDiscovery!: (response: Response) => void;
     const discovery = new Promise<Response>((resolve) => {

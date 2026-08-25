@@ -11,12 +11,14 @@ export function SourcesPage() {
   const [loading, setLoading] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [error, setError] = useState("");
+  const [providerStatus, setProviderStatus] = useState<{ reddit: { live: boolean; mode: string }; x: { live: boolean } } | null>(null);
   const visible = useMemo(() => sources.filter((item) => item.channel === channel), [sources, channel]);
 
   useEffect(() => {
-    fetch("/api/sources").then(async (response) => {
-      if (!response.ok) throw new Error("Could not load discovery sources");
-      setSources(await response.json());
+    Promise.all([fetch("/api/sources"), fetch("/api/sources/status")]).then(async ([sourcesResponse, statusResponse]) => {
+      if (!sourcesResponse.ok || !statusResponse.ok) throw new Error("Could not load discovery sources");
+      setSources(await sourcesResponse.json());
+      setProviderStatus(await statusResponse.json());
     }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Could not load sources"))
       .finally(() => setLoading(false));
   }, []);
@@ -60,6 +62,11 @@ export function SourcesPage() {
       <button className={channel === "reddit" ? "active" : ""} onClick={() => { setChannel("reddit"); setSuggestions([]); }}>Reddit communities</button>
       <button className={channel === "x" ? "active" : ""} onClick={() => { setChannel("x"); setSuggestions([]); }}>X accounts</button>
     </div>
+    {providerStatus && !providerStatus[channel].live && <div className="source-warning">
+      <b>{channel === "reddit" ? "Reddit watchlists are currently in demo mode." : "X account monitoring is not connected."}</b>
+      <span>{channel === "reddit" ? "Discovery can only return built-in sample posts. It cannot see posts from communities you add until approved Reddit API credentials are configured and USE_MOCK_REDDIT is set to false." : "Suggestions and watchlist editing work, but discovery cannot read account timelines until X is connected or an X bearer token is configured."}</span>
+      <a href="/connections">Open connection setup</a>
+    </div>}
     {error && <p className="state error">{error}</p>}
     <section className="source-panel">
       <div className="source-panel-heading"><div><h2>{channel === "reddit" ? "Subreddits to watch" : "Accounts to watch"}</h2><p className="muted">{channel === "reddit" ? "Discovery searches recent posts inside enabled communities." : "Discovery checks recent original posts from enabled accounts."}</p></div><button className="primary" disabled={discovering} onClick={discover}>{discovering ? <LoaderCircle className="spinner" size={16}/> : <Radar size={16}/>} Suggest relevant {channel === "reddit" ? "subreddits" : "accounts"}</button></div>

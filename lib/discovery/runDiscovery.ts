@@ -20,21 +20,23 @@ export async function runDiscovery(provider?: RedditProvider) {
     candidates_found: 0,
     opportunities_created: 0,
     error: null,
-    metadata: { errors: [] },
+    metadata: { errors: [], provider_errors: [] },
   };
   await repository.addRun(run);
   try {
     const configuredSources = await marketingStore.discoverySources();
     const redditTargets = configuredSources.filter((item) => item.enabled && item.channel === "reddit").map((item) => item.name);
     const xTargets = configuredSources.filter((item) => item.enabled && item.channel === "x").map((item) => item.name);
-    const source = provider || (process.env.USE_MOCK_REDDIT === "false" ? new RedditApiProvider(redditTargets) : new MockRedditProvider(redditTargets));
+    const liveReddit = Boolean(provider) || process.env.USE_MOCK_REDDIT === "false";
+    const source = provider || (liveReddit ? new RedditApiProvider(redditTargets) : new MockRedditProvider(redditTargets));
     const results = await Promise.allSettled([
       source.searchOpportunities(),
       ...(xTargets.length ? [new XApiProvider(xTargets).searchOpportunities()] : []),
     ]);
     const posts = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
-    (run.metadata.errors as string[]).push(...results.flatMap((result) => result.status === "rejected" ? [result.reason instanceof Error ? result.reason.message : String(result.reason)] : []));
+    (run.metadata.provider_errors as string[]).push(...results.flatMap((result) => result.status === "rejected" ? [result.reason instanceof Error ? result.reason.message : String(result.reason)] : []));
     run.metadata.sources = { reddit: redditTargets, x: xTargets };
+    run.metadata.provider_modes = { reddit: liveReddit ? "live" : "demo", x: xTargets.length ? "live" : "disabled" };
     run.candidates_found = posts.length;
     const active = (await repository.products()).filter(
       (p) => p.status === "active",

@@ -310,6 +310,7 @@ button:disabled {
   margin: 8px 0 0;
 }
 .run-entry .run-error { color: #ad4735; }
+.run-entry .run-warning { color: #786718; }
 .run-log-empty {
   color: var(--muted);
   display: grid;
@@ -335,6 +336,18 @@ button:disabled {
   padding: 11px 14px;
 }
 .source-tabs button.active { border-bottom-color: var(--green); color: var(--ink); }
+.source-warning {
+  align-items: start;
+  background: #fff4cd;
+  border: 1px solid #dfca76;
+  border-radius: 10px;
+  display: grid;
+  gap: 3px;
+  margin-bottom: 18px;
+  padding: 13px 15px;
+}
+.source-warning span { color: #655a31; font-size: 12px; }
+.source-warning a { color: var(--ink); font-size: 12px; font-weight: 750; margin-top: 4px; }
 .source-panel,
 .suggestions {
   background: var(--panel);
