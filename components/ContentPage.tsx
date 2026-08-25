@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, FileVideo, Plus, Send } from "lucide-react";
+import { CalendarClock, FileVideo, Pencil, Plus, Save, Send, X } from "lucide-react";
 import { Shell } from "./Shell";
 import { ChannelBadge } from "./ChannelBadge";
 import type { ContentItem, MarketingChannel, Product } from "@/lib/types";
@@ -12,6 +12,11 @@ const textChannels: MarketingChannel[] = ["x", "reddit"],
     "x",
     "linkedin",
   ];
+function localDateTimeValue(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
 export function ContentPage() {
   const [items, setItems] = useState<ContentItem[]>([]),
     [products, setProducts] = useState<Product[]>([]),
@@ -24,7 +29,8 @@ export function ContentPage() {
     [scheduled, setScheduled] = useState(""),
     [asset, setAsset] = useState<{ name: string; url: string } | null>(null),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [editing, setEditing] = useState<ContentItem | null>(null);
   const load = async () => {
     const [c, p] = await Promise.all([
       fetch("/api/content").then((r) => r.json()),
@@ -122,6 +128,35 @@ export function ContentPage() {
     const data = await response.json();
     setBusy(false);
     if (!response.ok) setError(data.error || "Publishing failed");
+    await load();
+  };
+  const startEditing = (item: ContentItem) => setEditing({
+    ...item,
+    channels: [...item.channels],
+    targets: [...item.targets],
+  });
+  const saveEdit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editing) return;
+    const scheduledAt = editing.scheduled_at;
+    if (scheduledAt && !window.confirm(`Save and schedule this content for ${new Date(scheduledAt).toLocaleString()}?`)) return;
+    setBusy(true); setError("");
+    const response = await fetch(`/api/content/${editing.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: editing.title,
+        body: editing.body,
+        channels: editing.channels,
+        targets: editing.targets,
+        scheduled_at: scheduledAt,
+        status: scheduledAt ? "scheduled" : "draft",
+      }),
+    });
+    const data = await response.json();
+    setBusy(false);
+    if (!response.ok) return setError(data.error || "Could not save content");
+    setEditing(null);
     await load();
   };
   const upcoming = useMemo(
@@ -284,7 +319,17 @@ export function ContentPage() {
               <span>Create a text post or video batch to get started.</span>
             </div>
           ) : (
-            items.map((item) => (
+            items.map((item) => editing?.id === item.id ? (
+              <form className="queue-edit" key={item.id} onSubmit={saveEdit}>
+                <div className="queue-edit-heading"><b>Edit content</b><button type="button" aria-label="Cancel editing" onClick={() => setEditing(null)}><X size={16}/></button></div>
+                <label>Internal title<input required value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })}/></label>
+                <label>{editing.kind === "post" ? "Post copy" : "Caption"}<textarea required aria-label="Edit post copy" value={editing.body} onChange={(event) => setEditing({ ...editing, body: event.target.value })}/></label>
+                <fieldset><legend>Channels</legend><div className="channelchoices">{(editing.kind === "post" ? textChannels : videoChannels).map((channel) => <label className={editing.channels.includes(channel) ? "on" : ""} key={channel}><input type="checkbox" checked={editing.channels.includes(channel)} onChange={() => setEditing({ ...editing, channels: editing.channels.includes(channel) ? editing.channels.filter((item) => item !== channel) : [...editing.channels, channel] })}/><ChannelBadge channel={channel}/></label>)}</div></fieldset>
+                <label>{editing.kind === "post" ? "People, communities or groups" : "Campaign tags"}<input value={editing.targets.join(", ")} onChange={(event) => setEditing({ ...editing, targets: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) })}/></label>
+                <label>Schedule (optional)<input type="datetime-local" value={localDateTimeValue(editing.scheduled_at)} onChange={(event) => setEditing({ ...editing, scheduled_at: event.target.value ? new Date(event.target.value).toISOString() : null })}/></label>
+                <div className="queue-edit-actions"><button type="button" className="secondary" onClick={() => setEditing(null)}>Cancel</button><button className="primary" disabled={busy || editing.channels.length === 0}><Save size={15}/> {busy ? "Saving..." : "Save changes"}</button></div>
+              </form>
+            ) : (
               <article className="queueitem" key={item.id}>
                 <div className="kindicon">
                   {item.kind === "video" ? (
@@ -329,14 +374,12 @@ export function ContentPage() {
                       ),
                   )}
                   {item.kind === "post" && item.status !== "published" && (
-                    <button
-                      className="secondary"
-                      disabled={busy}
-                      onClick={() => publish(item)}
-                    >
-                      <Send size={13} /> Publish now
-                    </button>
+                    <div className="queue-actions">
+                      <button className="secondary" disabled={busy} onClick={() => startEditing(item)}><Pencil size={13}/> Edit</button>
+                      <button className="secondary" disabled={busy} onClick={() => publish(item)}><Send size={13} /> Publish now</button>
+                    </div>
                   )}
+                  {item.kind === "video" && item.status !== "published" && <button className="secondary" disabled={busy} onClick={() => startEditing(item)}><Pencil size={13}/> Edit</button>}
                 </div>
               </article>
             ))
