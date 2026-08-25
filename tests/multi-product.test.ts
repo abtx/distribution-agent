@@ -29,4 +29,32 @@ describe("multi-product opportunities", () => {
     expect(reply).toContain(seedProducts[0].url);
     expect(reply).toContain(seedProducts[1].url);
   });
+
+  it("follows the field order and headings requested by the Reddit post", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const formattedPost = {
+      ...post,
+      body: `Please follow this format:\n\nStartup Name / URL\n\nLocation\n\nElevator pitch\n\nMore details\n\nGoals this month\n\nHow could r/startups help?\n\nDiscount for r/startups subscribers`,
+    };
+
+    const reply = await generateReply(formattedPost, [seedProducts[1]]);
+
+    const headings = [
+      "Startup Name / URL",
+      "Location",
+      "Elevator pitch",
+      "More details",
+      "Goals this month",
+      "How could r/startups help?",
+      "Discount for r/startups subscribers",
+    ];
+    const positions = headings.map((heading) => reply.indexOf(heading));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    expect(reply).toContain(`Startup Name / URL\nFluentish / ${seedProducts[1].url}`);
+    expect(reply).toContain("Location\nOnline");
+    expect(reply).toContain(seedProducts[1].one_liner);
+    expect(reply).toContain(seedProducts[1].description);
+    expect(reply).not.toContain("—");
+  });
 });

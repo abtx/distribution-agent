@@ -7,7 +7,7 @@ export class MockRedditProvider implements RedditProvider {
         id: "mock-share-startups-2026",
         subreddit: "startups",
         title: "Share your startup - August showcase",
-        body: "Tell us what you're building, who it helps, and drop your link.",
+        body: `Share your startup using this exact format:\n\nStartup Name / URL\n\nLocation\n\nElevator pitch\n\nMore details\n\nGoals this month\n\nHow could r/startups help?\n\nDiscount for r/startups subscribers`,
         url: "https://www.reddit.com/r/startups/comments/1utpfsi/share_your_startup_quarterly_post/",
         author: "AutoModerator",
         createdUtc: d,
