@@ -43,6 +43,24 @@ describe("dashboard UI", () => {
       expect.stringContaining("/comments/"),
     );
   });
+  it("opens an opportunity from the entire table row", async () => {
+    const u = userEvent.setup();
+    render(<Dashboard />);
+    const row = await screen.findByLabelText(
+      `Review opportunity: ${seedOpportunities[0].post_title}`,
+    );
+
+    await u.click(row);
+    expect(navigation.push).toHaveBeenCalledWith(
+      `/opportunities/${seedOpportunities[0].id}`,
+    );
+    navigation.push.mockReset();
+    row.focus();
+    await u.keyboard("{Enter}");
+    expect(navigation.push).toHaveBeenCalledWith(
+      `/opportunities/${seedOpportunities[0].id}`,
+    );
+  });
 
   it("opens the specific Reddit post from opportunity details", () => {
     render(

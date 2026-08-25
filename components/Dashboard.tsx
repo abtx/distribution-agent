@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ExternalLink, Play, Search, SlidersHorizontal } from "lucide-react";
 import type { DiscoveryRun, Opportunity, Product } from "@/lib/types";
 import { Shell } from "./Shell";
@@ -16,6 +17,7 @@ function age(s: string) {
       : `${Math.floor(h / 24)}d ago`;
 }
 export function Dashboard() {
+  const router = useRouter();
   const [ops, setOps] = useState<Opportunity[]>([]),
     [products, setProducts] = useState<Product[]>([]),
     [runs, setRuns] = useState<DiscoveryRun[]>([]),
@@ -229,7 +231,26 @@ export function Dashboard() {
                       Boolean(candidate),
                     );
                   return (
-                    <tr key={o.id}>
+                    <tr
+                      className="opportunity-row"
+                      key={o.id}
+                      tabIndex={0}
+                      aria-label={`Review opportunity: ${o.post_title}`}
+                      onClick={(event) => {
+                        if (
+                          (event.target as HTMLElement).closest(
+                            "a, button, input, select, textarea",
+                          )
+                        )
+                          return;
+                        router.push(`/opportunities/${o.id}`);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        router.push(`/opportunities/${o.id}`);
+                      }}
+                    >
                       <td>
                         <span
                           className={`score ${o.score >= 85 ? "high" : ""}`}

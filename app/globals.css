@@ -359,6 +359,14 @@ th:nth-child(5) {
 }
 tbody tr { transition: background 120ms ease; }
 tbody tr:hover { background: #fbfaf4; }
+.opportunity-row {
+  cursor: pointer;
+}
+.opportunity-row:focus-visible {
+  outline: 3px solid rgba(91, 124, 250, 0.28);
+  outline-offset: -3px;
+  background: #fbfaf4;
+}
 .score {
   width: 40px;
   height: 40px;
