@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -39,32 +39,7 @@ export function OpportunityDetail({
     [selectedProductIds, setSelectedProductIds] = useState(
       initial.matched_product_ids || [initial.matched_product_id],
     );
-  useEffect(() => {
-    const navigate = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        event.defaultPrevented ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey ||
-        target?.isContentEditable ||
-        target?.matches("input, textarea, select")
-      )
-        return;
-      const destination =
-        event.key === "ArrowLeft"
-          ? previousId
-          : event.key === "ArrowRight"
-            ? nextId
-            : null;
-      if (!destination) return;
-      event.preventDefault();
-      router.push(`/opportunities/${destination}`);
-    };
-    window.addEventListener("keydown", navigate);
-    return () => window.removeEventListener("keydown", navigate);
-  }, [nextId, previousId, router]);
-  const update = async (patch: Partial<Opportunity>) => {
+  const update = useCallback(async (patch: Partial<Opportunity>) => {
     setSaving(true);
     setMessage("");
     const r = await fetch(`/api/opportunities/${op.id}`, {
@@ -77,8 +52,57 @@ export function OpportunityDetail({
     if (r.ok) {
       setOp(d);
       setMessage("Saved");
-    } else setMessage(d.error || "Could not save");
-  };
+      return true;
+    }
+    setMessage(d.error || "Could not save");
+    return false;
+  }, [op.id]);
+  const complete = useCallback(
+    async (status: "approved" | "rejected") => {
+      if (saving) return;
+      const saved = await update(
+        status === "approved"
+          ? { status, edited_reply: text }
+          : { status },
+      );
+      if (!saved) return;
+      const destination = nextId || previousId;
+      router.push(destination ? `/opportunities/${destination}` : "/");
+    },
+    [nextId, previousId, router, saving, text, update],
+  );
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target?.isContentEditable ||
+        target?.matches("input, textarea, select, button, a")
+      )
+        return;
+      const destination =
+        event.key === "ArrowLeft"
+          ? previousId
+          : event.key === "ArrowRight"
+            ? nextId
+            : null;
+      if (destination) {
+        event.preventDefault();
+        router.push(`/opportunities/${destination}`);
+        return;
+      }
+      if (event.key === "Enter" || event.key === "Backspace") {
+        event.preventDefault();
+        void complete(event.key === "Enter" ? "approved" : "rejected");
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [complete, nextId, previousId, router]);
   const regenerate = async () => {
     setSaving(true);
     setMessage("");
@@ -150,16 +174,18 @@ export function OpportunityDetail({
           <button
             className="danger"
             disabled={saving}
-            onClick={() => update({ status: "rejected" })}
+            title="Reject and open the next pending opportunity (Backspace)"
+            onClick={() => void complete("rejected")}
           >
-            <X size={16} /> Reject
+            <X size={16} /> Reject <kbd aria-hidden="true">⌫</kbd>
           </button>
           <button
             className="approve"
             disabled={saving}
-            onClick={() => update({ status: "approved", edited_reply: text })}
+            title="Mark done and open the next pending opportunity (Enter)"
+            onClick={() => void complete("approved")}
           >
-            <Check size={16} /> Approve
+            <Check size={16} /> Done <kbd aria-hidden="true">↵</kbd>
           </button>
           {op.status === "approved" && (
             <button className="primary" disabled={saving} onClick={publish}>
@@ -269,8 +295,9 @@ export function OpportunityDetail({
             </button>
           </div>
           <div className="notice">
-            Approval does not publish. Once approved, use “Post to Reddit” and
-            confirm the public action.
+            Done marks this approved but does not publish it. Open the Approved
+            list when you are ready to use “Post to Reddit” and confirm the
+            public action.
           </div>
         </section>
       </div>

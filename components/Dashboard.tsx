@@ -22,7 +22,7 @@ export function Dashboard() {
     [loading, setLoading] = useState(true),
     [running, setRunning] = useState(false),
     [error, setError] = useState("");
-  const [status, setStatus] = useState("all"),
+  const [status, setStatus] = useState("pending"),
     [product, setProduct] = useState("all"),
     [subreddit, setSubreddit] = useState("all"),
     [threshold, setThreshold] = useState(0),

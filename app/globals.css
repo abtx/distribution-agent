@@ -494,6 +494,14 @@ tbody tr:hover { background: #fbfaf4; }
   display: flex;
   gap: 8px;
 }
+.actions kbd {
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  opacity: 0.62;
+}
 .detailgrid {
   display: grid;
   grid-template-columns: 1.6fr 0.8fr;

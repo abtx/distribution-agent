@@ -84,7 +84,7 @@ describe("dashboard UI", () => {
     await u.keyboard("{ArrowLeft}");
     expect(navigation.push).toHaveBeenCalledTimes(1);
   });
-  it("approve and reject work", async () => {
+  it("marks opportunities done or rejected and advances", async () => {
     const u = userEvent.setup();
     render(
       <OpportunityDetail
@@ -92,15 +92,38 @@ describe("dashboard UI", () => {
         product={seedProducts[0]}
       />,
     );
-    await u.click(screen.getByRole("button", { name: /approve/i }));
+    await u.click(screen.getByRole("button", { name: /done/i }));
     await waitFor(() =>
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining("/api/opportunities/"),
         expect.objectContaining({ method: "PATCH" }),
       ),
     );
+    expect(navigation.push).toHaveBeenCalledWith("/");
     await u.click(screen.getByRole("button", { name: /reject/i }));
     expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+  it("uses Enter for Done and Backspace for Reject outside fields", async () => {
+    const u = userEvent.setup();
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+        nextId="next-id"
+      />,
+    );
+    await u.keyboard("{Enter}");
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body))).toMatchObject({
+      status: "approved",
+    });
+    expect(navigation.push).toHaveBeenCalledWith("/opportunities/next-id");
+
+    await u.keyboard("{Backspace}");
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+    expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1]?.body))).toMatchObject({
+      status: "rejected",
+    });
   });
   it("editing a proposed reply can be saved", async () => {
     const u = userEvent.setup();

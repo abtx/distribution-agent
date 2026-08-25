@@ -13,15 +13,16 @@ export default async function Page({
   ]);
   const opportunity = opportunities.find((o) => o.id === id);
   if (!opportunity) notFound();
-  const index = opportunities.findIndex((item) => item.id === id);
+  const pending = opportunities.filter((item) => item.status === "pending");
+  const index = pending.findIndex((item) => item.id === id);
   return (
     <OpportunityDetail
       initial={opportunity}
       products={products}
-      previousId={index > 0 ? opportunities[index - 1].id : null}
-      nextId={index < opportunities.length - 1 ? opportunities[index + 1].id : null}
-      position={index + 1}
-      total={opportunities.length}
+      previousId={index > 0 ? pending[index - 1].id : null}
+      nextId={index >= 0 && index < pending.length - 1 ? pending[index + 1].id : null}
+      position={index >= 0 ? index + 1 : undefined}
+      total={index >= 0 ? pending.length : undefined}
     />
   );
 }
