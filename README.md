@@ -72,9 +72,11 @@ Set `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REDIRECT_URI`, and a des
 
 Create an X OAuth 2.0 application with this callback URI:
 
-`http://localhost:3000/api/connections/x/callback`
+`http://127.0.0.1:3000/api/connections/x/callback`
 
 Set `X_CLIENT_ID`, `X_REDIRECT_URI`, and `X_CLIENT_SECRET` when the X app is confidential. The PKCE flow requests `tweet.read`, `tweet.write`, `users.read`, and `offline.access`.
+
+X requires `127.0.0.1` rather than `localhost` for local callback URLs. Start the X connection from the in-app button; it switches to the matching host before setting the OAuth state cookie.
 
 Restart the app after changing `.env.local`, open **Connections**, and authorize each account. The app never exposes provider tokens through its browser API.
 

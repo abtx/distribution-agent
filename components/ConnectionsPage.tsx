@@ -109,7 +109,11 @@ export function ConnectionsPage() {
               ) : configuration?.[platform].configured ? (
                 <a
                   className="primary connect-link"
-                  href={`/api/connections/${platform}/start`}
+                  href={
+                    platform === "x"
+                      ? `${new URL(configuration.x.callbackUrl).origin}/api/connections/x/start`
+                      : "/api/connections/reddit/start"
+                  }
                 >
                   <Link2 size={15} /> Connect {label}
                 </a>

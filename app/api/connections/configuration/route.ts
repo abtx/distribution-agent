@@ -18,7 +18,8 @@ export async function GET(request: Request) {
     x: {
       configured: Boolean(process.env.X_CLIENT_ID),
       callbackUrl:
-        process.env.X_REDIRECT_URI || `${origin}/api/connections/x/callback`,
+        process.env.X_REDIRECT_URI ||
+        "http://127.0.0.1:3000/api/connections/x/callback",
       missing: [!process.env.X_CLIENT_ID && "X_CLIENT_ID"].filter(Boolean),
     },
   });
