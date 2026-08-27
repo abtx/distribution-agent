@@ -6,6 +6,31 @@ function cookie(request: Request, name: string) {
     .get("cookie")
     ?.match(new RegExp(`(?:^|; )${name}=([^;]+)`))?.[1];
 }
+
+async function xError(response: Response, fallback: string) {
+  let data: Record<string, unknown> = {};
+  try {
+    data = (await response.json()) as Record<string, unknown>;
+  } catch {
+    // X occasionally returns an empty or non-JSON error response.
+  }
+  const detail = [
+    data.error,
+    data.error_description,
+    data.title,
+    data.detail,
+    data.type,
+  ].find((value): value is string => typeof value === "string" && value.length > 0);
+  return NextResponse.json(
+    {
+      error: fallback,
+      upstream_status: response.status,
+      ...(detail ? { detail } : {}),
+    },
+    { status: 502 },
+  );
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const state = url.searchParams.get("state");
@@ -46,10 +71,7 @@ export async function GET(request: Request) {
     body,
   });
   if (!tokenResponse.ok)
-    return NextResponse.json(
-      { error: "X token exchange failed" },
-      { status: 502 },
-    );
+    return xError(tokenResponse, "X token exchange failed");
   const token = (await tokenResponse.json()) as {
     access_token: string;
     refresh_token?: string;
@@ -60,10 +82,7 @@ export async function GET(request: Request) {
     headers: { Authorization: `Bearer ${token.access_token}` },
   });
   if (!meResponse.ok)
-    return NextResponse.json(
-      { error: "Could not load X account" },
-      { status: 502 },
-    );
+    return xError(meResponse, "Could not load X account");
   const me = (await meResponse.json()) as {
     data: { id: string; username: string };
   };
