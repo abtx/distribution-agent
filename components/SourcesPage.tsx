@@ -68,6 +68,7 @@ export function SourcesPage() {
       <span>{channel === "reddit" ? "Discovery can only return built-in sample posts. It cannot see posts from communities you add until approved Reddit API credentials are configured and USE_MOCK_REDDIT is set to false." : "Suggestions and watchlist editing work, but discovery cannot read account timelines until X is connected or an X bearer token is configured."}</span>
       <a href="/connections">Open connection setup</a>
     </div>}
+    {channel === "reddit" && providerStatus?.reddit.mode === "zernio" && <p className="muted">Reddit discovery is connected through Zernio.</p>}
     {error && <p className="state error">{error}</p>}
     <section className="source-panel">
       <div className="source-panel-heading"><div><h2>{channel === "reddit" ? "Subreddits to watch" : "Accounts to watch"}</h2><p className="muted">{channel === "reddit" ? "Discovery searches recent posts inside enabled communities." : "Discovery checks recent original posts from enabled accounts."}</p></div><button className="primary" disabled={discovering} onClick={discover}>{discovering ? <LoaderCircle className="spinner" size={16}/> : <Radar size={16}/>} Suggest relevant {channel === "reddit" ? "subreddits" : "accounts"}</button></div>

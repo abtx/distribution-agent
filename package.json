@@ -9,6 +9,7 @@
     "discovery:once": "tsx scripts/run-daily-discovery.ts",
     "publishing:due": "tsx scripts/run-scheduled-publishing.ts",
     "scheduler:install": "bash scripts/install-macos-scheduler.sh",
+    "zernio:setup": "bash scripts/setup-zernio.sh",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

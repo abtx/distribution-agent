@@ -16,6 +16,8 @@ const valid = {
 beforeEach(() => {
   store.reset();
   delete process.env.OPENAI_API_KEY;
+  delete process.env.ZERNIO_API_KEY;
+  delete process.env.ZERNIO_REDDIT_ACCOUNT_ID;
 });
 describe("discovery", () => {
   it("creates valid opportunities and discards irrelevant ones", async () => {

@@ -3,6 +3,7 @@ import { classifyOpportunity } from "../ai/classifyOpportunity";
 import { generateReply } from "../ai/generateReply";
 import { MockRedditProvider } from "../reddit/mockProvider";
 import { RedditApiProvider } from "../reddit/redditApiProvider";
+import { ZernioRedditProvider } from "../reddit/zernioProvider";
 import type { RedditProvider } from "../reddit/provider";
 import { repository } from "../repository";
 import { marketingStore } from "../marketingStore";
@@ -27,8 +28,11 @@ export async function runDiscovery(provider?: RedditProvider) {
     const configuredSources = await marketingStore.discoverySources();
     const redditTargets = configuredSources.filter((item) => item.enabled && item.channel === "reddit").map((item) => item.name);
     const xTargets = configuredSources.filter((item) => item.enabled && item.channel === "x").map((item) => item.name);
-    const liveReddit = Boolean(provider) || process.env.USE_MOCK_REDDIT === "false";
-    const source = provider || (liveReddit ? new RedditApiProvider(redditTargets) : new MockRedditProvider(redditTargets));
+    const zernioReddit = Boolean(process.env.ZERNIO_API_KEY && process.env.ZERNIO_REDDIT_ACCOUNT_ID);
+    const liveReddit = Boolean(provider) || zernioReddit || process.env.USE_MOCK_REDDIT === "false";
+    const source = provider || (zernioReddit
+      ? new ZernioRedditProvider(redditTargets)
+      : liveReddit ? new RedditApiProvider(redditTargets) : new MockRedditProvider(redditTargets));
     const results = await Promise.allSettled([
       source.searchOpportunities(),
       ...(xTargets.length ? [new XApiProvider(xTargets).searchOpportunities()] : []),
@@ -36,7 +40,10 @@ export async function runDiscovery(provider?: RedditProvider) {
     const posts = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
     (run.metadata.provider_errors as string[]).push(...results.flatMap((result) => result.status === "rejected" ? [result.reason instanceof Error ? result.reason.message : String(result.reason)] : []));
     run.metadata.sources = { reddit: redditTargets, x: xTargets };
-    run.metadata.provider_modes = { reddit: liveReddit ? "live" : "demo", x: xTargets.length ? "live" : "disabled" };
+    run.metadata.provider_modes = {
+      reddit: zernioReddit ? "zernio" : liveReddit ? "live" : "demo",
+      x: xTargets.length ? "live" : "disabled",
+    };
     run.candidates_found = posts.length;
     const active = (await repository.products()).filter(
       (p) => p.status === "active",
@@ -96,7 +103,11 @@ export async function runDiscovery(provider?: RedditProvider) {
               proposed_reply: reply,
               edited_reply: null,
               status: "pending",
-              source: post.platform === "x" ? "x_api" : source instanceof MockRedditProvider ? "mock" : "reddit_api",
+              source: post.platform === "x"
+                ? "x_api"
+                : source instanceof MockRedditProvider
+                  ? "mock"
+                  : source instanceof ZernioRedditProvider ? "zernio_reddit" : "reddit_api",
               metadata: { confidence: c.confidence },
               created_at: now,
               updated_at: now,
