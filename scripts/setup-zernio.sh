@@ -186,6 +186,22 @@ finish() {
 
 TOTAL_STAGES=3
 
+find_zernio_account() {
+  local setup_key="$1" setup_platform="$2"
+  ZERNIO_SETUP_KEY="$setup_key" ZERNIO_SETUP_PLATFORM="$setup_platform" node -e '
+    const response = await fetch("https://zernio.com/api/v1/accounts", {
+      headers: { Authorization: `Bearer ${process.env.ZERNIO_SETUP_KEY}` },
+    });
+    if (!response.ok) process.exit(1);
+    const payload = await response.json();
+    const account = (payload.accounts || []).find(
+      (item) => item.platform === process.env.ZERNIO_SETUP_PLATFORM && item.isActive !== false,
+    );
+    if (!account) process.exit(1);
+    process.stdout.write(account._id || account.id || "");
+  '
+}
+
 banner "Zernio setup"
 
 stage "Create an API key"
@@ -199,16 +215,27 @@ stage "Connect Reddit"
 say "Connect the Reddit account that Distribution Agent should search and publish through."
 open_url "https://zernio.com/dashboard"
 step "Open Accounts or Connections, choose Reddit, and complete Reddit authorization."
-step "Open the connected Reddit account and copy its account ID."
-ask ZERNIO_REDDIT_ACCOUNT_ID "Paste the connected Reddit account ID:"
+pause "Press Enter after Reddit shows as connected."
+ZERNIO_REDDIT_ACCOUNT_ID=$(find_zernio_account "$ZERNIO_API_KEY" "reddit" || true)
+if [[ -z "$ZERNIO_REDDIT_ACCOUNT_ID" ]]; then
+  warn "The API could not find an active Reddit account yet."
+  ask ZERNIO_REDDIT_ACCOUNT_ID "Paste the connected Reddit account ID:"
+else
+  say "Found the connected Reddit account automatically."
+fi
 write_env ZERNIO_REDDIT_ACCOUNT_ID "$ZERNIO_REDDIT_ACCOUNT_ID"
 
 stage "Connect X"
 say "The free allowance covers Reddit and X as the first two connected accounts."
 open_url "https://zernio.com/dashboard"
 step "Open Accounts or Connections, choose X/Twitter, and complete authorization."
-step "Open the connected X account and copy its account ID. Leave blank to configure X later."
-ask ZERNIO_X_ACCOUNT_ID "Paste the connected X account ID (optional):"
+pause "Press Enter after X shows as connected, or press Enter to skip it."
+ZERNIO_X_ACCOUNT_ID=$(find_zernio_account "$ZERNIO_API_KEY" "twitter" || true)
+if [[ -z "$ZERNIO_X_ACCOUNT_ID" ]]; then
+  ask ZERNIO_X_ACCOUNT_ID "Paste the connected X account ID (optional):"
+else
+  say "Found the connected X account automatically."
+fi
 write_env ZERNIO_X_ACCOUNT_ID "$ZERNIO_X_ACCOUNT_ID"
 
 finish

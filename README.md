@@ -51,7 +51,7 @@ Run the guided setup:
 npm run zernio:setup
 ```
 
-The wizard opens the current Zernio dashboard pages, stores the API key and connected account IDs only in the ignored local `.env`, and can be safely rerun. Once `ZERNIO_API_KEY` and `ZERNIO_REDDIT_ACCOUNT_ID` are present, discovery uses Zernio's newest-post feed for every enabled Reddit community. It fetches up to 50 posts from the last week per community and feeds them into the existing opportunity classifier. Direct Reddit OAuth remains available as a secondary implementation, and the guided manual review remains the no-credential fallback.
+The wizard opens the current Zernio dashboard pages, discovers connected account IDs through Zernio's accounts API, stores the API key and account IDs only in the ignored local `.env`, and can be safely rerun. Once `ZERNIO_API_KEY` and `ZERNIO_REDDIT_ACCOUNT_ID` are present, discovery uses Zernio's recent-post search for every enabled Reddit community. It searches for explicit invitations to share or discuss products, applies a second local invitation guard, and feeds the remaining candidates into the existing opportunity classifier. Direct Reddit OAuth remains available as a secondary implementation, and the guided manual review remains the no-credential fallback.
 
 If port 3000 is occupied, startup automatically tries 3001, 3002, and subsequent ports, then prints the selected URL. OAuth setup guidance in the app reflects the active port unless an explicit redirect URI is configured in `.env`.
 
