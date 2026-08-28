@@ -71,7 +71,10 @@ function fieldValue(key: string, product: Product) {
 }
 
 function requiredCopy(product: Product) {
-  return (product.must_include || "").trim().replaceAll("{url}", product.url);
+  const prefix = (product.must_include || "").trim();
+  if (!prefix) return product.url;
+  if (prefix.includes("{url}")) return prefix.replaceAll("{url}", product.url);
+  return `${prefix.replace(/:\s*$/, "")}: ${product.url}`;
 }
 
 function appendRequiredCopy(content: string, product: Product) {
@@ -97,10 +100,13 @@ function escapeRegExp(value: string) {
 
 function productBlock(product: Product) {
   const required = requiredCopy(product);
-  const linkCopy = required.includes(product.url)
-    ? required
-    : [required, product.url].filter(Boolean).join("\n");
-  return `• ${product.name} - ${productPositioning(product)}\n${linkCopy}`;
+  return `• ${product.name} - ${productPositioning(product)}\n${required}`;
+}
+
+function founderClosing(productCount: number) {
+  return productCount === 1
+    ? "Happy to share more about how I’m building it, and I’d genuinely appreciate any feedback."
+    : "Happy to share more about how I’m building these, and I’d genuinely appreciate any feedback.";
 }
 
 function normalizeDashes(reply: string) {
@@ -109,7 +115,7 @@ function normalizeDashes(reply: string) {
 
 function ensureRequiredContent(reply: string, products: Product[]) {
   const additions = products.flatMap((product) => {
-    const missing = [requiredCopy(product), product.url].filter(
+    const missing = [requiredCopy(product)].filter(
       (value) => value && !reply.includes(value),
     );
     return missing.length ? [`• ${product.name}\n${missing.join("\n")}`] : [];
@@ -139,9 +145,7 @@ export async function generateReply(post: RedditPost, products: Product[]) {
   if (!process.env.OPENAI_API_KEY) {
     const formatted = formattedFallback(post, products);
     if (formatted) return normalizeDashes(formatted);
-    const reply = products.length === 1
-      ? `I’m building ${productBlock(products[0]).replace(/^• /, "")}`
-      : `I’m building a couple of things:\n\n${products.map(productBlock).join("\n\n")}`;
+    const reply = `${products.map(productBlock).join("\n\n")}\n\n${founderClosing(products.length)}`;
     return normalizeDashes(reply);
   }
   const client = new OpenAI({
@@ -156,7 +160,7 @@ export async function generateReply(post: RedditPost, products: Product[]) {
       {
         role: "system",
         content:
-          "Write one human social reply as JSON {reply}. The source post body is authoritative. Detect and strictly follow every requested reply field, heading, order, template, and formatting example. If a requested fact is unavailable, say so briefly rather than inventing it. Otherwise be short, contextual, factual, with no hashtags, fake claims, or hype. Mention being the builder and include every supplied product with its link. Include each product's non-empty must_include text exactly as written, replacing {url} with that product's URL. When there are multiple products, give each its own bullet and separate product blocks with exactly one empty line; never run one product's description or link into another product. Do not add a redundant summary or closing unless the source post asks for one. For X, lead with a useful response to the post and avoid sounding like an unsolicited pitch. Do not imply separate products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
+          "Write one human social reply as JSON {reply}. The source post body is authoritative. Detect and strictly follow every requested reply field, heading, order, template, and formatting example. If a requested fact is unavailable, say so briefly rather than inventing it. Otherwise be short, contextual, factual, with no hashtags, fake claims, or hype. Include every supplied product with its link. For generic product-sharing posts, output product bullets in the form '• NAME - concise positioning' followed on the next line by 'URL PREFIX: URL'. Treat each product's non-empty must_include value as its URL prefix. Legacy values containing {url} must be included exactly after replacing {url} with the product URL. Separate product blocks with exactly one empty line; never run one product's description or link into another product. Finish with one brief, warm founder sentence that offers to share what you have learned or how you are building the products and genuinely invites feedback. Sound thoughtful, helpful, and confident, never salesy or self-congratulatory. Do not add an introduction or redundant summary unless the source post asks for one. For X, lead with a useful response to the post and avoid sounding like an unsolicited pitch. Do not imply separate products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
       },
       { role: "user", content: JSON.stringify({ post, products }) },
     ],

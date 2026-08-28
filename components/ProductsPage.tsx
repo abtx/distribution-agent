@@ -160,17 +160,23 @@ export function ProductsPage() {
             )}
           </div>
           {error && <div className="alert">{error}</div>}
-          <div className="twocol">
-            <Field
-              label="Name"
-              value={form.name}
-              onChange={(name) => setForm({ ...form, name })}
-            />
+          <Field
+            label="Name"
+            value={form.name}
+            onChange={(name) => setForm({ ...form, name })}
+          />
+          <div className="twocol url-fields">
             <Field
               label="URL"
               value={form.url}
               onChange={(url) => setForm({ ...form, url })}
               type="url"
+            />
+            <Field
+              label="URL prefix"
+              value={form.must_include}
+              onChange={(must_include) => setForm({ ...form, must_include })}
+              placeholder="For example: FREE download"
             />
           </div>
           <Field
@@ -208,12 +214,6 @@ export function ProductsPage() {
             label="Preferred CTA"
             value={form.preferred_cta}
             onChange={(preferred_cta) => setForm({ ...form, preferred_cta })}
-          />
-          <Field
-            label="Must include"
-            value={form.must_include}
-            onChange={(must_include) => setForm({ ...form, must_include })}
-            placeholder="Exact required copy, for example: Download FREE at {url}"
           />
           <div className="twocol">
             <label>

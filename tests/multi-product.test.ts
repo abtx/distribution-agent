@@ -42,6 +42,16 @@ describe("multi-product opportunities", () => {
     );
   });
 
+  it("uses a singular founder closing for one product", async () => {
+    delete process.env.OPENAI_API_KEY;
+
+    const reply = await generateReply(post, [seedProducts[0]]);
+
+    expect(reply).toMatch(
+      /Happy to share more about how I’m building it, and I’d genuinely appreciate any feedback\.$/,
+    );
+  });
+
   it("keeps product copy separate, complete, and limited to ordinary hyphens", async () => {
     delete process.env.OPENAI_API_KEY;
     const products = [
@@ -62,10 +72,10 @@ describe("multi-product opportunities", () => {
     const reply = await generateReply(post, products);
 
     expect(reply).toContain(
-      "• ReelBlocks - a desktop video editor built for creators who want to get from raw footage to finished video fast - without fighting a traditional editing interface.\nDownload FREE at https://www.reelblocks.app/",
+      "• ReelBlocks - a desktop video editor built for creators who want to get from raw footage to finished video fast - without fighting a traditional editing interface.\nFREE download: https://www.reelblocks.app/",
     );
     expect(reply).toContain(
-      "• Fluentish - talk naturally in the language you're learning, then Fluentish finds your mistakes and turns them into flashcards so you can practise exactly what you got wrong.\nDownload FREE at https://fluentish.xyz",
+      "• Fluentish - talk naturally in the language you're learning, then Fluentish finds your mistakes and turns them into flashcards so you can practise exactly what you got wrong.\nFREE to use with ChatGPT: https://fluentish.xyz",
     );
     expect(reply).toContain(
       "https://www.reelblocks.app/\n\n• Fluentish",
@@ -73,7 +83,7 @@ describe("multi-product opportunities", () => {
     expect(reply).not.toContain("https://www.reelblocks.app/\n\n\n");
     expect(reply).not.toContain("Instead of forcing everything");
     expect(reply).not.toMatch(/[—–]/);
-    expect(reply).not.toContain("which one is most useful");
+    expect(reply).toMatch(/Happy to share more about how I’m building these, and I’d genuinely appreciate any feedback\.$/);
   });
 
   it("follows the field order and headings requested by the Reddit post", async () => {
@@ -101,7 +111,7 @@ describe("multi-product opportunities", () => {
     expect(reply).toContain("Location\nOnline");
     expect(reply).toContain(seedProducts[1].one_liner);
     expect(reply).toContain(seedProducts[1].description);
-    expect(reply).toContain(`Download FREE at ${seedProducts[1].url}`);
+    expect(reply).toContain(`FREE to use with ChatGPT: ${seedProducts[1].url}`);
     expect(reply).not.toContain("—");
   });
 });
