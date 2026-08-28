@@ -100,6 +100,67 @@ export async function publishRedditComment(parentPostId: string, text: string) {
   };
 }
 
+export async function publishZernioReply({
+  postId,
+  text,
+  platform,
+  subreddit,
+}: {
+  postId: string;
+  text: string;
+  platform: "reddit" | "x";
+  subreddit?: string;
+}) {
+  const apiKey = process.env.ZERNIO_API_KEY;
+  const accountId = process.env[
+    platform === "reddit" ? "ZERNIO_REDDIT_ACCOUNT_ID" : "ZERNIO_X_ACCOUNT_ID"
+  ];
+  if (!apiKey || !accountId)
+    throw new Error(
+      `${platform === "reddit" ? "Reddit" : "X"} publishing through Zernio is not configured`,
+    );
+
+  const response = await fetch(
+    `https://zernio.com/api/v1/inbox/comments/${encodeURIComponent(postId)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        accountId,
+        message: text,
+        ...(platform === "reddit" && subreddit ? { subreddit } : {}),
+      }),
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+  const body = await response.text();
+  let data: {
+    success?: boolean;
+    data?: { commentId?: string; cid?: string };
+    error?: string;
+    message?: string;
+  } = {};
+  try {
+    data = body ? JSON.parse(body) : {};
+  } catch {
+    // Preserve the status-based error below when the provider returns HTML.
+  }
+  if (!response.ok || data.success === false) {
+    const detail = data.error || data.message;
+    if (response.status === 402)
+      throw new Error("Your Zernio plan does not include direct replies");
+    throw new Error(
+      detail || `Zernio could not publish the reply (${response.status})`,
+    );
+  }
+  const id = data.data?.commentId || data.data?.cid || null;
+  return { id, platform, provider: "zernio" as const };
+}
+
 export async function publishXPost(text: string, replyToId?: string) {
   const connection = await requireConnection("x");
   const response = await fetch("https://api.x.com/2/tweets", {

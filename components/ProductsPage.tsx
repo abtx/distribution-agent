@@ -13,6 +13,7 @@ const blank = {
   keywords: "",
   status: "active" as ProductStatus,
   preferred_cta: "",
+  must_include: "",
   notes: "",
 };
 export function ProductsPage() {
@@ -33,6 +34,7 @@ export function ProductsPage() {
     setEditing(p.id);
     setForm({
       ...p,
+      must_include: p.must_include || "",
       categories: p.categories.join(", "),
       audiences: p.audiences.join(", "),
       keywords: p.keywords.join(", "),
@@ -207,6 +209,12 @@ export function ProductsPage() {
             value={form.preferred_cta}
             onChange={(preferred_cta) => setForm({ ...form, preferred_cta })}
           />
+          <Field
+            label="Must include"
+            value={form.must_include}
+            onChange={(must_include) => setForm({ ...form, must_include })}
+            placeholder="Exact required copy, for example: Download FREE at {url}"
+          />
           <div className="twocol">
             <label>
               Status
@@ -241,11 +249,13 @@ function Field({
   value,
   onChange,
   type = "text",
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (x: string) => void;
   type?: string;
+  placeholder?: string;
 }) {
   return (
     <label>
@@ -253,6 +263,7 @@ function Field({
       <input
         required={label === "Name" || label === "URL"}
         type={type}
+        placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

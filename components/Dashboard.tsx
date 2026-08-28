@@ -150,8 +150,8 @@ export function Dashboard() {
           tone="blue"
         />
         <Stat
-          n={ops.filter((o) => o.status === "approved").length}
-          label="Done"
+          n={ops.filter((o) => o.status === "posted").length}
+          label="Replied"
           tone="green"
         />
         <Stat
@@ -178,7 +178,7 @@ export function Dashboard() {
             {[
               { value: "all", label: "All" },
               { value: "pending", label: "Pending" },
-              { value: "approved", label: "Done" },
+              { value: "posted", label: "Replied" },
               { value: "rejected", label: "Rejected" },
             ].map((item) => (
               <button
@@ -325,7 +325,7 @@ export function Dashboard() {
                       </td>
                       <td>
                         <span className={`chip ${o.status}`}>
-                          {o.status === "approved" ? "done" : o.status}
+                          {o.status === "posted" ? "replied" : o.status}
                         </span>
                       </td>
                     </tr>

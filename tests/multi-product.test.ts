@@ -30,6 +30,52 @@ describe("multi-product opportunities", () => {
     expect(reply).toContain(seedProducts[1].url);
   });
 
+  it("regenerates replies for products saved before must_include existed", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const legacyProduct = {
+      ...seedProducts[0],
+      must_include: undefined as unknown as string,
+    };
+
+    await expect(generateReply(post, [legacyProduct])).resolves.toContain(
+      legacyProduct.url,
+    );
+  });
+
+  it("keeps product copy separate, complete, and limited to ordinary hyphens", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const products = [
+      {
+        ...seedProducts[0],
+        url: "https://www.reelblocks.app/",
+        description:
+          "ReelBlocks is a desktop video editor built for creators who want to get from raw footage to finished video fast — without fighting a traditional editing interface.\n\nInstead of forcing everything into a rigid timeline surrounded by panels, tracks and modes, ReelBlocks gives you a visual workflow.",
+      },
+      {
+        ...seedProducts[1],
+        url: "https://fluentish.xyz",
+        description:
+          "Talk naturally in the language you're learning, then Fluentish finds your mistakes and turns them into flashcards so you can practise exactly what you got wrong.",
+      },
+    ];
+
+    const reply = await generateReply(post, products);
+
+    expect(reply).toContain(
+      "• ReelBlocks - a desktop video editor built for creators who want to get from raw footage to finished video fast - without fighting a traditional editing interface.\nDownload FREE at https://www.reelblocks.app/",
+    );
+    expect(reply).toContain(
+      "• Fluentish - talk naturally in the language you're learning, then Fluentish finds your mistakes and turns them into flashcards so you can practise exactly what you got wrong.\nDownload FREE at https://fluentish.xyz",
+    );
+    expect(reply).toContain(
+      "https://www.reelblocks.app/\n\n• Fluentish",
+    );
+    expect(reply).not.toContain("https://www.reelblocks.app/\n\n\n");
+    expect(reply).not.toContain("Instead of forcing everything");
+    expect(reply).not.toMatch(/[—–]/);
+    expect(reply).not.toContain("which one is most useful");
+  });
+
   it("follows the field order and headings requested by the Reddit post", async () => {
     delete process.env.OPENAI_API_KEY;
     const formattedPost = {
@@ -55,6 +101,7 @@ describe("multi-product opportunities", () => {
     expect(reply).toContain("Location\nOnline");
     expect(reply).toContain(seedProducts[1].one_liner);
     expect(reply).toContain(seedProducts[1].description);
+    expect(reply).toContain(`Download FREE at ${seedProducts[1].url}`);
     expect(reply).not.toContain("—");
   });
 });

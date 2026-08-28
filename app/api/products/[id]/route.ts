@@ -13,6 +13,7 @@ const schema = z
     keywords: z.array(z.string()),
     status: z.enum(["active", "disabled", "archived"]),
     preferred_cta: z.string(),
+    must_include: z.string(),
     notes: z.string(),
   })
   .partial();

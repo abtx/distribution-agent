@@ -30,6 +30,19 @@ describe("opportunity regeneration", () => {
     expect(opportunity?.status).toBe("pending");
   });
 
+  it("regenerates products created before must_include was added", async () => {
+    store.updateProduct("reelblocks", {
+      must_include: undefined as unknown as string,
+    });
+
+    await expect(regenerateOpportunities()).resolves.toMatchObject({
+      regenerated: 1,
+    });
+    expect(store.opportunities()[0].proposed_reply).toContain(
+      "https://example.com/reelblocks",
+    );
+  });
+
   it("does not rewrite already published opportunities", async () => {
     const before = store.opportunities()[0].proposed_reply;
     store.updateOpportunity("demo-opportunity", { status: "posted" });

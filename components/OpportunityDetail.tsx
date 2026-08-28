@@ -4,7 +4,6 @@ import Link from "@/lib/navigation";
 import { useRouter } from "@/lib/navigation";
 import {
   ArrowLeft,
-  Check,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -40,6 +39,7 @@ export function OpportunityDetail({
     [selectedProductIds, setSelectedProductIds] = useState(
       initial.matched_product_ids || [initial.matched_product_id],
     );
+  const published = opMetadataPublished(op);
   const update = useCallback(async (patch: Partial<Opportunity>) => {
     setSaving(true);
     setMessage("");
@@ -58,20 +58,37 @@ export function OpportunityDetail({
     setMessage(d.error || "Could not save");
     return false;
   }, [op.id]);
-  const complete = useCallback(
-    async (status: "approved" | "rejected") => {
+  const reject = useCallback(
+    async () => {
       if (saving) return;
-      const saved = await update(
-        status === "approved"
-          ? { status, edited_reply: text }
-          : { status },
-      );
+      const saved = await update({ status: "rejected" });
       if (!saved) return;
       const destination = nextId || previousId;
       router.push(destination ? `/opportunities/${destination}` : "/");
     },
-    [nextId, previousId, router, saving, text, update],
+    [nextId, previousId, router, saving, update],
   );
+  const publish = useCallback(async () => {
+    if (saving || op.status !== "pending") return;
+    if (!window.confirm("Reply to this post now? This action is public.")) return;
+    setSaving(true);
+    setMessage("");
+    const response = await fetch(`/api/opportunities/${op.id}/publish`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = await response.json();
+    setSaving(false);
+    if (!response.ok) {
+      setMessage(data.error || "Could not reply to post");
+      return;
+    }
+    setOp(data);
+    setMessage("Reply posted");
+    const destination = nextId || previousId;
+    router.push(destination ? `/opportunities/${destination}` : "/");
+  }, [nextId, op.id, op.status, previousId, router, saving, text]);
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -98,12 +115,13 @@ export function OpportunityDetail({
       }
       if (event.key === "Enter" || event.key === "Backspace") {
         event.preventDefault();
-        void complete(event.key === "Enter" ? "approved" : "rejected");
+        if (event.key === "Enter") void publish();
+        else void reject();
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [complete, nextId, previousId, router]);
+  }, [nextId, previousId, publish, reject, router]);
   const regenerate = async () => {
     setSaving(true);
     setMessage("");
@@ -127,23 +145,6 @@ export function OpportunityDetail({
     } catch {
       setMessage("Could not copy to clipboard");
     }
-  };
-  const publish = async () => {
-    if (
-      !window.confirm("Post this reply to Reddit now? This action is public.")
-    )
-      return;
-    setSaving(true);
-    setMessage("");
-    const response = await fetch(`/api/opportunities/${op.id}/publish`, {
-      method: "POST",
-    });
-    const data = await response.json();
-    setSaving(false);
-    if (!response.ok)
-      return setMessage(data.error || "Could not publish reply");
-    setOp(data);
-    setMessage("Posted to Reddit");
   };
   return (
     <Shell>
@@ -184,22 +185,23 @@ export function OpportunityDetail({
             className="danger"
             disabled={saving}
             title="Reject and open the next pending opportunity (Backspace)"
-            onClick={() => void complete("rejected")}
+            onClick={() => void reject()}
           >
             <X size={16} /> Reject <kbd aria-hidden="true">⌫</kbd>
           </button>
           <button
             className="approve"
-            disabled={saving}
-            title="Mark done and open the next pending opportunity (Enter)"
-            onClick={() => void complete("approved")}
+            disabled={saving || op.status === "posted"}
+            title="Publish this reply and open the next pending opportunity (Enter)"
+            onClick={() => void publish()}
           >
-            <Check size={16} /> Done <kbd aria-hidden="true">↵</kbd>
+            <ExternalLink size={16} /> {op.status === "posted" ? "Replied" : "Reply to post"}{" "}
+            {op.status !== "posted" && <kbd aria-hidden="true">↵</kbd>}
           </button>
-          {op.status === "approved" && (
-            <button className="primary" disabled={saving} onClick={publish}>
-              <ExternalLink size={16} /> Post to Reddit
-            </button>
+          {op.status === "posted" && published?.url && (
+            <a className="button-link" href={published.url} target="_blank" rel="noreferrer">
+              View reply <ExternalLink size={14} />
+            </a>
           )}
         </div>
       </header>
@@ -315,12 +317,24 @@ export function OpportunityDetail({
             </div>
           </div>
           <div className="notice">
-            Done completes the review but does not publish it. Open the Done
-            list when you are ready to use “Post to Reddit” and confirm the
-            public action.
+            Reply to post publishes the text through Zernio after confirmation.
+            A successful reply moves this opportunity to the Replied list.
           </div>
         </section>
       </div>
     </Shell>
   );
+}
+
+function opMetadataPublished(opportunity: Opportunity) {
+  const value = opportunity.metadata?.published;
+  if (!value || typeof value !== "object") return null;
+  const id = "id" in value && typeof value.id === "string" ? value.id : null;
+  const storedUrl = "url" in value && typeof value.url === "string" ? value.url : null;
+  const url = storedUrl || (id
+    ? opportunity.source === "x_api"
+      ? `https://x.com/i/web/status/${id}`
+      : `${opportunity.post_url.replace(/\/$/, "")}/comment/${id}/`
+    : null);
+  return { url };
 }

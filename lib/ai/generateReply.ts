@@ -70,28 +70,79 @@ function fieldValue(key: string, product: Product) {
   }
 }
 
+function requiredCopy(product: Product) {
+  return (product.must_include || "").trim().replaceAll("{url}", product.url);
+}
+
+function appendRequiredCopy(content: string, product: Product) {
+  const required = requiredCopy(product);
+  if (!required || content.includes(required)) return content;
+  return `${content}\n\n${required}`;
+}
+
+function productPositioning(product: Product) {
+  const firstParagraph = product.description
+    .trim()
+    .split(/\r?\n\s*\r?\n/, 1)[0]
+    .replace(/\s+/g, " ");
+  const positioning = firstParagraph || product.one_liner.trim();
+  const repeatedName = new RegExp(`^${escapeRegExp(product.name)}\\s+is\\s+`, "i");
+  const withoutRepeatedName = positioning.replace(repeatedName, "");
+  return withoutRepeatedName.replace(/^./, (character) => character.toLowerCase());
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function productBlock(product: Product) {
+  const required = requiredCopy(product);
+  const linkCopy = required.includes(product.url)
+    ? required
+    : [required, product.url].filter(Boolean).join("\n");
+  return `• ${product.name} - ${productPositioning(product)}\n${linkCopy}`;
+}
+
+function normalizeDashes(reply: string) {
+  return reply.replace(/\s*[—–]\s*/g, " - ");
+}
+
+function ensureRequiredContent(reply: string, products: Product[]) {
+  const additions = products.flatMap((product) => {
+    const missing = [requiredCopy(product), product.url].filter(
+      (value) => value && !reply.includes(value),
+    );
+    return missing.length ? [`• ${product.name}\n${missing.join("\n")}`] : [];
+  });
+  return additions.length
+    ? `${reply.trim()}\n\n${additions.join("\n\n")}`
+    : reply;
+}
+
 function formattedFallback(post: RedditPost, products: Product[]) {
   const fields = detectRequestedReplyFields(post.body);
   if (fields.length < 2) return null;
   return products
     .map((product) =>
-      fields
-        .map((field) => `${field.label}\n${fieldValue(field.key, product)}`)
-        .join("\n\n"),
+      appendRequiredCopy(
+        fields
+          .map((field) => `${field.label}\n${fieldValue(field.key, product)}`)
+          .join("\n\n"),
+        product,
+      ),
     )
-    .join("\n\n---\n\n");
+    .join("\n\n");
 }
 
 export async function generateReply(post: RedditPost, products: Product[]) {
   if (!products.length) throw new Error("At least one product is required");
   if (!process.env.OPENAI_API_KEY) {
     const formatted = formattedFallback(post, products);
-    if (formatted) return formatted;
-    const positioning = (product: Product) =>
-      (product.description.trim() || product.one_liner).slice(0, 240);
-    return products.length === 1
-      ? `I’m building ${products[0].name} - ${positioning(products[0])} ${products[0].preferred_cta}: ${products[0].url}`
-      : `I’m building a couple of things:\n\n${products.map((product) => `• ${product.name} - ${positioning(product)} ${product.url}`).join("\n")}\n\nI’d love to hear which one is most useful to you.`;
+    if (formatted) return normalizeDashes(formatted);
+    const reply = products.length === 1
+      ? `I’m building ${productBlock(products[0]).replace(/^• /, "")}`
+      : `I’m building a couple of things:\n\n${products.map(productBlock).join("\n\n")}`;
+    return normalizeDashes(reply);
   }
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -105,11 +156,16 @@ export async function generateReply(post: RedditPost, products: Product[]) {
       {
         role: "system",
         content:
-          "Write one human social reply as JSON {reply}. The source post body is authoritative. Detect and strictly follow every requested reply field, heading, order, template, and formatting example. If a requested fact is unavailable, say so briefly rather than inventing it. Otherwise be short, contextual, factual, with no hashtags, fake claims, or hype. Mention being the builder and include every supplied product with its link. For X, lead with a useful response to the post and avoid sounding like an unsolicited pitch. Do not imply separate products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
+          "Write one human social reply as JSON {reply}. The source post body is authoritative. Detect and strictly follow every requested reply field, heading, order, template, and formatting example. If a requested fact is unavailable, say so briefly rather than inventing it. Otherwise be short, contextual, factual, with no hashtags, fake claims, or hype. Mention being the builder and include every supplied product with its link. Include each product's non-empty must_include text exactly as written, replacing {url} with that product's URL. When there are multiple products, give each its own bullet and separate product blocks with exactly one empty line; never run one product's description or link into another product. Do not add a redundant summary or closing unless the source post asks for one. For X, lead with a useful response to the post and avoid sounding like an unsolicited pitch. Do not imply separate products are one product. Use ordinary hyphens (-), never em dashes or en dashes.",
       },
       { role: "user", content: JSON.stringify({ post, products }) },
     ],
   });
-  return replySchema.parse(JSON.parse(r.choices[0]?.message.content || "{}"))
-    .reply;
+  return normalizeDashes(
+    ensureRequiredContent(
+      replySchema.parse(JSON.parse(r.choices[0]?.message.content || "{}"))
+        .reply,
+      products,
+    ),
+  );
 }

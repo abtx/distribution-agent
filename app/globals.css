@@ -663,7 +663,8 @@ tbody tr:hover { background: #fbfaf4; }
   background: #fff0c7;
   color: #8d5319;
 }
-.chip.approved {
+.chip.approved,
+.chip.posted {
   background: var(--mint);
   color: var(--green);
 }
@@ -735,6 +736,17 @@ tbody tr:hover { background: #fbfaf4; }
 .actions {
   display: flex;
   gap: 8px;
+}
+.button-link {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--green);
+  display: inline-flex;
+  font-weight: 700;
+  gap: 6px;
+  padding: 10px 13px;
+  text-decoration: none;
 }
 .actions kbd {
   min-width: 20px;

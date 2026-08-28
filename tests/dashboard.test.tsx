@@ -13,6 +13,7 @@ vi.mock("@/lib/navigation", async (importOriginal) => ({
 }));
 beforeEach(() => {
   navigation.push.mockReset();
+  vi.spyOn(window, "confirm").mockReturnValue(true);
   global.fetch = vi.fn(async (input, init) => {
     if (String(input) === "/api/dashboard")
       return new Response(
@@ -27,6 +28,14 @@ beforeEach(() => {
         JSON.stringify({
           ...seedOpportunities[0],
           ...JSON.parse(String(init.body)),
+        }),
+      );
+    if (String(input).endsWith("/publish") && init?.method === "POST")
+      return new Response(
+        JSON.stringify({
+          ...seedOpportunities[0],
+          status: "posted",
+          edited_reply: JSON.parse(String(init.body)).text,
         }),
       );
     return new Response("{}");
@@ -44,13 +53,13 @@ describe("dashboard UI", () => {
       expect.stringContaining("/comments/"),
     );
   });
-  it("uses Done consistently for completed reviews", async () => {
+  it("uses Replied consistently for published replies", async () => {
     const user = userEvent.setup();
     global.fetch = vi.fn(async () =>
       new Response(
         JSON.stringify({
           opportunities: [
-            { ...seedOpportunities[0], status: "approved" as const },
+            { ...seedOpportunities[0], status: "posted" as const },
           ],
           products: seedProducts,
           runs: [],
@@ -59,10 +68,10 @@ describe("dashboard UI", () => {
     ) as typeof fetch;
     render(<Dashboard />);
 
-    await user.click(await screen.findByRole("button", { name: "Done" }));
+    await user.click(await screen.findByRole("button", { name: "Replied" }));
 
-    expect(screen.getByText("done")).toBeInTheDocument();
-    expect(screen.queryByText("approved")).not.toBeInTheDocument();
+    expect(screen.getByText("replied")).toBeInTheDocument();
+    expect(screen.queryByText("posted")).not.toBeInTheDocument();
   });
   it("shows recorded discovery runs and their outcomes in the right sidebar", async () => {
     global.fetch = vi.fn(async () =>
@@ -225,7 +234,7 @@ describe("dashboard UI", () => {
     await u.keyboard("{ArrowLeft}");
     expect(navigation.push).toHaveBeenCalledTimes(1);
   });
-  it("marks opportunities done or rejected and advances", async () => {
+  it("replies to opportunities or rejects them and advances", async () => {
     const u = userEvent.setup();
     render(
       <OpportunityDetail
@@ -233,18 +242,18 @@ describe("dashboard UI", () => {
         product={seedProducts[0]}
       />,
     );
-    await u.click(screen.getByRole("button", { name: /done/i }));
+    await u.click(screen.getByRole("button", { name: /reply to post/i }));
     await waitFor(() =>
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/opportunities/"),
-        expect.objectContaining({ method: "PATCH" }),
+        expect.stringContaining("/publish"),
+        expect.objectContaining({ method: "POST" }),
       ),
     );
     expect(navigation.push).toHaveBeenCalledWith("/");
     await u.click(screen.getByRole("button", { name: /reject/i }));
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
-  it("uses Enter for Done and Backspace for Reject outside fields", async () => {
+  it("uses Enter for Reply to post and Backspace for Reject outside fields", async () => {
     const u = userEvent.setup();
     render(
       <OpportunityDetail
@@ -255,8 +264,9 @@ describe("dashboard UI", () => {
     );
     await u.keyboard("{Enter}");
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    expect(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0])).toContain("/publish");
     expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body))).toMatchObject({
-      status: "approved",
+      text: seedOpportunities[0].proposed_reply,
     });
     expect(navigation.push).toHaveBeenCalledWith("/opportunities/next-id");
 
@@ -265,6 +275,41 @@ describe("dashboard UI", () => {
     expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1]?.body))).toMatchObject({
       status: "rejected",
     });
+  });
+  it("keeps the opportunity pending when Zernio rejects the reply", async () => {
+    global.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ error: "Your Zernio plan does not include direct replies" }), { status: 502 }),
+    ) as typeof fetch;
+    const u = userEvent.setup();
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+      />,
+    );
+
+    await u.click(screen.getByRole("button", { name: /reply to post/i }));
+
+    expect(await screen.findByText(/plan does not include direct replies/i)).toBeInTheDocument();
+    expect(navigation.push).not.toHaveBeenCalled();
+  });
+  it("shows a completed state and direct link for a replied opportunity", () => {
+    render(
+      <OpportunityDetail
+        initial={{
+          ...seedOpportunities[0],
+          status: "posted",
+          metadata: { published: { url: "https://reddit.com/reply/example" } },
+        }}
+        product={seedProducts[0]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Replied" })).toBeDisabled();
+    expect(screen.getByRole("link", { name: /view reply/i })).toHaveAttribute(
+      "href",
+      "https://reddit.com/reply/example",
+    );
   });
   it("editing a proposed reply can be saved", async () => {
     const u = userEvent.setup();

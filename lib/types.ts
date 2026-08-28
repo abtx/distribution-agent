@@ -10,6 +10,7 @@ export interface Product {
   keywords: string[];
   status: ProductStatus;
   preferred_cta: string;
+  must_include: string;
   notes: string;
   created_at: string;
   updated_at: string;

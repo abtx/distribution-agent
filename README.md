@@ -53,6 +53,8 @@ npm run zernio:setup
 
 The wizard opens the current Zernio dashboard pages, discovers connected account IDs through Zernio's accounts API, stores the API key and account IDs only in the ignored local `.env`, and can be safely rerun. Once `ZERNIO_API_KEY` and `ZERNIO_REDDIT_ACCOUNT_ID` are present, discovery uses Zernio's recent-post search for every enabled Reddit community. It searches for explicit invitations to share or discuss products, applies a second local invitation guard, and feeds the remaining candidates into the existing opportunity classifier. Direct Reddit OAuth remains available as a secondary implementation, and the guided manual review remains the no-credential fallback.
 
+On a pending opportunity, `Reply to post` (or Enter outside an input) asks for confirmation and then publishes the current reply through the connected Zernio account. Only a successful provider response moves the opportunity to `Replied`; provider failures leave it pending, and overlapping or repeated submissions are rejected. The Replied view retains the provider comment ID and a direct link to the published reply.
+
 If port 3000 is occupied, startup automatically tries 3001, 3002, and subsequent ports, then prints the selected URL. OAuth setup guidance in the app reflects the active port unless an explicit redirect URI is configured in `.env`.
 
 Never commit `.env` or `.data/`. Both are ignored by Git.
