@@ -5,6 +5,7 @@ import { generateReply } from "@/lib/ai/generateReply";
 import { NextResponse } from "@/lib/http";
 import { repository } from "@/lib/repository";
 import type { Opportunity, RedditPost } from "@/lib/types";
+import { samePost } from "@/lib/opportunities/identity";
 
 const schema = z.object({
   url: z.string().url(),
@@ -28,7 +29,13 @@ export async function POST(request: Request) {
   let location: ReturnType<typeof parseRedditUrl>;
   try { location = parseRedditUrl(parsed.data.url); }
   catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid Reddit URL" }, { status: 400 }); }
-  const existing = (await repository.opportunities()).find((item) => item.reddit_post_id === location.postId);
+  const incomingIdentity = {
+    reddit_post_id: location.postId,
+    post_url: parsed.data.url,
+  };
+  const existing = (await repository.opportunities()).find((item) =>
+    samePost(item, incomingIdentity),
+  );
   if (existing) return NextResponse.json({ error: "This Reddit post is already in the opportunity queue", opportunity_id: existing.id }, { status: 409 });
   const products = (await repository.products()).filter((item) => item.status === "active");
   const post: RedditPost = {

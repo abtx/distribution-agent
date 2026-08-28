@@ -8,10 +8,12 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
+  LoaderCircle,
   RefreshCw,
   X,
 } from "lucide-react";
 import type { Opportunity, Product } from "@/lib/types";
+import { showToast } from "@/lib/toast";
 import { Shell } from "./Shell";
 export function OpportunityDetail({
   initial,
@@ -35,6 +37,9 @@ export function OpportunityDetail({
   const [op, setOp] = useState(initial),
     [text, setText] = useState(initial.edited_reply || initial.proposed_reply),
     [saving, setSaving] = useState(false),
+    [publishing, setPublishing] = useState(false),
+    [confirmingPublish, setConfirmingPublish] = useState(false),
+    [publishError, setPublishError] = useState(""),
     [message, setMessage] = useState(""),
     [selectedProductIds, setSelectedProductIds] = useState(
       initial.matched_product_ids || [initial.matched_product_id],
@@ -60,35 +65,51 @@ export function OpportunityDetail({
   }, [op.id]);
   const reject = useCallback(
     async () => {
-      if (saving) return;
+      if (saving || publishing || op.status !== "pending") return;
       const saved = await update({ status: "rejected" });
       if (!saved) return;
       const destination = nextId || previousId;
       router.push(destination ? `/opportunities/${destination}` : "/");
     },
-    [nextId, previousId, router, saving, update],
+    [nextId, op.status, previousId, publishing, router, saving, update],
   );
-  const publish = useCallback(async () => {
-    if (saving || op.status !== "pending") return;
-    if (!window.confirm("Reply to this post now? This action is public.")) return;
-    setSaving(true);
+  const requestPublish = useCallback(() => {
+    if (saving || publishing || op.status !== "pending") return;
+    setPublishError("");
+    setConfirmingPublish(true);
+  }, [op.status, publishing, saving]);
+  const confirmPublish = useCallback(async () => {
+    if (saving || publishing || op.status !== "pending") return;
+    setConfirmingPublish(false);
+    setPublishing(true);
+    setPublishError("");
     setMessage("");
-    const response = await fetch(`/api/opportunities/${op.id}/publish`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    const data = await response.json();
-    setSaving(false);
-    if (!response.ok) {
-      setMessage(data.error || "Could not reply to post");
-      return;
+    try {
+      const response = await fetch(`/api/opportunities/${op.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok)
+        throw new Error(data.error || "Could not reply to post");
+      setOp(data);
+      setMessage("Reply posted");
+      const receipt = opMetadataPublished(data);
+      showToast({
+        title: "Reply posted successfully",
+        message: `Comment ID: ${receipt?.id || "Provider did not return an ID"}`,
+        url: receipt?.url,
+      });
+      router.push(nextId ? `/opportunities/${nextId}` : "/");
+    } catch (error) {
+      setPublishError(
+        error instanceof Error ? error.message : "Could not reply to post",
+      );
+    } finally {
+      setPublishing(false);
     }
-    setOp(data);
-    setMessage("Reply posted");
-    const destination = nextId || previousId;
-    router.push(destination ? `/opportunities/${destination}` : "/");
-  }, [nextId, op.id, op.status, previousId, router, saving, text]);
+  }, [nextId, op.id, op.status, publishing, router, saving, text]);
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -115,13 +136,16 @@ export function OpportunityDetail({
       }
       if (event.key === "Enter" || event.key === "Backspace") {
         event.preventDefault();
-        if (event.key === "Enter") void publish();
+        if (event.key === "Enter") {
+          if (confirmingPublish) void confirmPublish();
+          else requestPublish();
+        }
         else void reject();
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [nextId, previousId, publish, reject, router]);
+  }, [confirmPublish, confirmingPublish, nextId, previousId, reject, requestPublish, router]);
   const regenerate = async () => {
     setSaving(true);
     setMessage("");
@@ -148,6 +172,49 @@ export function OpportunityDetail({
   };
   return (
     <Shell>
+      {(confirmingPublish || publishing || publishError || op.status === "posted") && (
+        <aside
+          className={`publish-notice ${publishError ? "error" : op.status === "posted" ? "success" : ""}`}
+          role={publishError ? "alert" : "status"}
+          aria-live="polite"
+        >
+          {confirmingPublish ? (
+            <>
+              <b>Post this public reply?</b>
+              <span>It will be published through Zernio as your connected account.</span>
+              <div>
+                <button type="button" onClick={() => setConfirmingPublish(false)}>
+                  Cancel
+                </button>
+                <button className="primary" type="button" onClick={() => void confirmPublish()}>
+                  Confirm reply
+                </button>
+              </div>
+            </>
+          ) : publishing ? (
+            <>
+              <b><LoaderCircle className="spinner" size={16} /> Posting reply</b>
+              <span>Waiting for confirmation from the platform...</span>
+            </>
+          ) : publishError ? (
+            <>
+              <b>Reply was not posted</b>
+              <span>{publishError}</span>
+              <button type="button" onClick={() => setPublishError("")}>Dismiss</button>
+            </>
+          ) : (
+            <>
+              <b>Reply posted successfully</b>
+              <span>Comment ID: {published?.id || "Provider did not return an ID"}</span>
+              {published?.url && (
+                <a href={published.url} target="_blank" rel="noreferrer">
+                  View reply <ExternalLink size={13} />
+                </a>
+              )}
+            </>
+          )}
+        </aside>
+      )}
       <header>
         <div>
           <Link className="back" href="/">
@@ -183,7 +250,7 @@ export function OpportunityDetail({
         <div className="actions">
           <button
             className="danger"
-            disabled={saving}
+            disabled={saving || publishing || op.status === "posted"}
             title="Reject and open the next pending opportunity (Backspace)"
             onClick={() => void reject()}
           >
@@ -191,18 +258,14 @@ export function OpportunityDetail({
           </button>
           <button
             className="approve"
-            disabled={saving || op.status === "posted"}
+            disabled={saving || publishing || op.status === "posted"}
             title="Publish this reply and open the next pending opportunity (Enter)"
-            onClick={() => void publish()}
+            onClick={requestPublish}
           >
-            <ExternalLink size={16} /> {op.status === "posted" ? "Replied" : "Reply to post"}{" "}
-            {op.status !== "posted" && <kbd aria-hidden="true">↵</kbd>}
+            {publishing ? <LoaderCircle className="spinner" size={16} /> : <ExternalLink size={16} />}
+            {op.status === "posted" ? "Replied" : publishing ? "Posting reply..." : "Reply to post"}{" "}
+            {op.status !== "posted" && !publishing && <kbd aria-hidden="true">↵</kbd>}
           </button>
-          {op.status === "posted" && published?.url && (
-            <a className="button-link" href={published.url} target="_blank" rel="noreferrer">
-              View reply <ExternalLink size={14} />
-            </a>
-          )}
         </div>
       </header>
       <div className="detailgrid">
@@ -280,7 +343,7 @@ export function OpportunityDetail({
             <div className="reply-tools">
               <button
                 type="button"
-                disabled={saving || selectedProductIds.length === 0}
+                disabled={saving || publishing || selectedProductIds.length === 0}
                 onClick={regenerate}
               >
                 <RefreshCw size={14} /> Generate combined reply
@@ -336,5 +399,5 @@ function opMetadataPublished(opportunity: Opportunity) {
       ? `https://x.com/i/web/status/${id}`
       : `${opportunity.post_url.replace(/\/$/, "")}/comment/${id}/`
     : null);
-  return { url };
+  return { id, url };
 }

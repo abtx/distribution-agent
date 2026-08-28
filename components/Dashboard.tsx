@@ -5,11 +5,14 @@ import { useRouter } from "@/lib/navigation";
 import {
   ExternalLink,
   LoaderCircle,
+  PanelRightOpen,
   Play,
   Search,
   SlidersHorizontal,
+  X as CloseIcon,
 } from "lucide-react";
 import type { DiscoveryRun, Opportunity, Product } from "@/lib/types";
+import { actionableOpportunities } from "@/lib/opportunities/identity";
 import { Shell } from "./Shell";
 function age(s: string) {
   const h = Math.max(
@@ -30,6 +33,7 @@ export function Dashboard() {
     [runs, setRuns] = useState<DiscoveryRun[]>([]),
     [loading, setLoading] = useState(true),
     [running, setRunning] = useState(false),
+    [activityOpen, setActivityOpen] = useState(false),
     [error, setError] = useState("");
   const [status, setStatus] = useState("pending"),
     [product, setProduct] = useState("all"),
@@ -53,6 +57,14 @@ export function Dashboard() {
   useEffect(() => {
     void load();
   }, []);
+  useEffect(() => {
+    if (!activityOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActivityOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [activityOpen]);
   const run = async () => {
     if (discoveryRequestActive.current) return;
     discoveryRequestActive.current = true;
@@ -75,9 +87,18 @@ export function Dashboard() {
       setRunning(false);
     }
   };
+  const actionable = useMemo(() => actionableOpportunities(ops), [ops]);
+  const actionableIds = useMemo(
+    () => new Set(actionable.map((item) => item.id)),
+    [actionable],
+  );
+  const displayOps = useMemo(
+    () => ops.filter((item) => item.status !== "pending" || actionableIds.has(item.id)),
+    [actionableIds, ops],
+  );
   const filtered = useMemo(
     () =>
-      ops
+      displayOps
         .filter(
           (o) =>
             (status === "all" || o.status === status) &&
@@ -98,7 +119,7 @@ export function Dashboard() {
             b.score - a.score ||
             +new Date(b.created_utc) - +new Date(a.created_utc),
         ),
-    [ops, status, product, subreddit, threshold, q],
+    [displayOps, status, product, subreddit, threshold, q],
   );
   const today = new Date().toDateString();
   return (
@@ -136,8 +157,8 @@ export function Dashboard() {
       )}
       <section className="stats">
         <Stat
-          n={ops.filter((o) => o.status === "pending").length}
-          label="Pending"
+          n={actionable.length}
+          label="Inbox"
           tone="orange"
         />
         <Stat
@@ -176,8 +197,7 @@ export function Dashboard() {
         <div className="filters">
           <div className="tabs">
             {[
-              { value: "all", label: "All" },
-              { value: "pending", label: "Pending" },
+              { value: "pending", label: "Inbox" },
               { value: "posted", label: "Replied" },
               { value: "rejected", label: "Rejected" },
             ].map((item) => (
@@ -220,7 +240,7 @@ export function Dashboard() {
             onChange={(e) => setSubreddit(e.target.value)}
           >
             <option value="all">All sources</option>
-            {[...new Set(ops.map((o) => o.subreddit))].map((s) => (
+            {[...new Set(displayOps.map((o) => o.subreddit))].map((s) => (
               <option key={s}>{s}</option>
             ))}
           </select>
@@ -297,9 +317,12 @@ export function Dashboard() {
                         </span>
                       </td>
                       <td>
-                        <Link className="title" href={`/opportunities/${o.id}`}>
-                          {o.post_title}
-                        </Link>
+                        <div className="source-title">
+                          <PlatformIcon source={o.source} />
+                          <Link className="title" href={`/opportunities/${o.id}`}>
+                            {o.post_title}
+                          </Link>
+                        </div>
                         <div className="meta">
                           {o.source === "x_api" ? o.subreddit : `r/${o.subreddit}`} · {age(o.created_utc)} ·{" "}
                           <a href={o.post_url} target="_blank" rel="noreferrer">
@@ -325,7 +348,11 @@ export function Dashboard() {
                       </td>
                       <td>
                         <span className={`chip ${o.status}`}>
-                          {o.status === "posted" ? "replied" : o.status}
+                          {o.status === "posted"
+                            ? "replied"
+                            : o.status === "pending"
+                              ? "inbox"
+                              : o.status}
                         </span>
                       </td>
                     </tr>
@@ -337,27 +364,78 @@ export function Dashboard() {
         )}
       </section>
         </div>
-        <RunLog runs={runs} manualRunActive={running} />
       </div>
+      <button
+        aria-controls="discovery-activity"
+        aria-expanded={activityOpen}
+        className={`activity-trigger${running ? " running" : ""}`}
+        onClick={() => setActivityOpen(true)}
+        type="button"
+      >
+        {running ? <LoaderCircle className="spinner" size={15} /> : <PanelRightOpen size={15} />}
+        <span>Activity</span>
+        <b>{runs.length + (running ? 1 : 0)}</b>
+      </button>
+      {activityOpen && (
+        <button
+          aria-label="Close activity"
+          className="activity-backdrop"
+          onClick={() => setActivityOpen(false)}
+          type="button"
+        />
+      )}
+      <RunLog
+        manualRunActive={running}
+        onClose={() => setActivityOpen(false)}
+        open={activityOpen}
+        runs={runs}
+      />
     </Shell>
+  );
+}
+
+function PlatformIcon({ source }: { source: Opportunity["source"] }) {
+  const isX = source === "x_api";
+  return (
+    <span
+      aria-label={`${isX ? "X" : "Reddit"} opportunity`}
+      className={`platform-icon ${isX ? "x" : "reddit"}`}
+      role="img"
+    >
+      {isX ? "X" : "r/"}
+    </span>
   );
 }
 
 function RunLog({
   runs,
   manualRunActive,
+  open,
+  onClose,
 }: {
   runs: DiscoveryRun[];
   manualRunActive: boolean;
+  open: boolean;
+  onClose: () => void;
 }) {
   return (
-    <section className="run-sidebar" aria-label="Discovery run log">
+    <section
+      aria-hidden={!open}
+      aria-label="Discovery run log"
+      className={`run-sidebar${open ? " open" : ""}`}
+      id="discovery-activity"
+    >
       <div className="run-log-heading">
         <div>
           <p className="eyebrow">ACTIVITY</p>
           <h2>Discovery runs</h2>
         </div>
-        <span>{runs.length + (manualRunActive ? 1 : 0)}</span>
+        <div className="run-log-heading-actions">
+          <span>{runs.length + (manualRunActive ? 1 : 0)}</span>
+          <button aria-label="Close activity" onClick={onClose} type="button">
+            <CloseIcon size={16} />
+          </button>
+        </div>
       </div>
       <div className="run-list" aria-live="polite">
         {manualRunActive && (

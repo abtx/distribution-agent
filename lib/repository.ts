@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { store } from "./store";
 import type { DiscoveryRun, Opportunity, Product } from "./types";
+import { samePost } from "./opportunities/identity";
 
 function db() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -77,6 +78,8 @@ export const repository = {
   async addOpportunity(o: Opportunity) {
     const c = db();
     if (!c) return store.addOpportunity(o);
+    if ((await this.opportunities()).some((existing) => samePost(existing, o)))
+      return false;
     const { error } = await c.from("opportunities").insert(o);
     if (error?.code === "23505") return false;
     if (error) throw new Error(error.message);

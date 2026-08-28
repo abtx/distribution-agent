@@ -13,7 +13,6 @@ vi.mock("@/lib/navigation", async (importOriginal) => ({
 }));
 beforeEach(() => {
   navigation.push.mockReset();
-  vi.spyOn(window, "confirm").mockReturnValue(true);
   global.fetch = vi.fn(async (input, init) => {
     if (String(input) === "/api/dashboard")
       return new Response(
@@ -36,22 +35,37 @@ beforeEach(() => {
           ...seedOpportunities[0],
           status: "posted",
           edited_reply: JSON.parse(String(init.body)).text,
+          metadata: {
+            published: {
+              id: "t1_reply",
+              url: "https://reddit.com/reply/t1_reply",
+            },
+          },
         }),
       );
     return new Response("{}");
   }) as typeof fetch;
 });
 describe("dashboard UI", () => {
-  it("displays pending opportunities", async () => {
+  it("displays inbox opportunities without an All tab", async () => {
     render(<Dashboard />);
     expect(
       await screen.findByText(seedOpportunities[0].post_title),
     ).toBeInTheDocument();
-    expect(screen.getByText("pending")).toBeInTheDocument();
+    expect(screen.getByText("inbox")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Inbox" })).toHaveClass(
+      "selected",
+    );
+    expect(
+      screen.queryByRole("button", { name: "All" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open/i })).toHaveAttribute(
       "href",
       expect.stringContaining("/comments/"),
     );
+    expect(
+      screen.getByRole("img", { name: "Reddit opportunity" }),
+    ).toBeInTheDocument();
   });
   it("uses Replied consistently for published replies", async () => {
     const user = userEvent.setup();
@@ -73,7 +87,7 @@ describe("dashboard UI", () => {
     expect(screen.getByText("replied")).toBeInTheDocument();
     expect(screen.queryByText("posted")).not.toBeInTheDocument();
   });
-  it("shows recorded discovery runs and their outcomes in the right sidebar", async () => {
+  it("keeps discovery activity collapsed until requested", async () => {
     global.fetch = vi.fn(async () =>
       new Response(
         JSON.stringify({
@@ -104,9 +118,18 @@ describe("dashboard UI", () => {
         }),
       ),
     ) as typeof fetch;
+    const user = userEvent.setup();
     render(<Dashboard />);
 
+    const activity = await screen.findByRole("button", { name: /activity/i });
+    expect(activity).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("region", { name: "Discovery run log" }),
+    ).not.toBeInTheDocument();
+    await user.click(activity);
+
     const log = await screen.findByLabelText("Discovery run log");
+    expect(activity).toHaveAttribute("aria-expanded", "true");
     expect(within(log).getByText("Discovery runs")).toBeInTheDocument();
     expect(within(log).getByText("completed")).toBeInTheDocument();
     expect(within(log).getByText("failed")).toBeInTheDocument();
@@ -115,6 +138,9 @@ describe("dashboard UI", () => {
     ).toBeInTheDocument();
     expect(within(log).getByText("12")).toBeInTheDocument();
     expect(within(log).getByText("3")).toBeInTheDocument();
+
+    await user.click(within(log).getByRole("button", { name: "Close activity" }));
+    expect(activity).toHaveAttribute("aria-expanded", "false");
   });
   it("distinguishes provider warnings from candidate errors", async () => {
     global.fetch = vi.fn(async () => new Response(JSON.stringify({
@@ -124,12 +150,69 @@ describe("dashboard UI", () => {
         metadata: { errors: [], provider_errors: ["X watchlist skipped - connect X"], provider_modes: { reddit: "demo" } },
       }],
     }))) as typeof fetch;
+    const user = userEvent.setup();
     render(<Dashboard />);
+    await user.click(await screen.findByRole("button", { name: /activity/i }));
     const log = await screen.findByLabelText("Discovery run log");
     expect(within(log).getByText("Demo Reddit data - watchlists were not searched.")).toBeInTheDocument();
     expect(within(log).getByText("X watchlist skipped - connect X")).toBeInTheDocument();
     expect(within(log).getByText("completed with warnings")).toBeInTheDocument();
     expect(within(log).queryByText(/candidate error/i)).not.toBeInTheDocument();
+  });
+
+  it("shows an X platform icon for X opportunities", async () => {
+    global.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          opportunities: [
+            {
+              ...seedOpportunities[0],
+              id: "x-opportunity",
+              source: "x_api",
+              subreddit: "levelsio",
+              post_url: "https://x.com/levelsio/status/1",
+            },
+          ],
+          products: seedProducts,
+          runs: [],
+        }),
+      ),
+    ) as typeof fetch;
+    render(<Dashboard />);
+
+    expect(
+      await screen.findByRole("img", { name: "X opportunity" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show a pending duplicate of an already replied post", async () => {
+    const replied = {
+      ...seedOpportunities[0],
+      id: "replied-record",
+      status: "posted" as const,
+    };
+    const duplicate = {
+      ...seedOpportunities[0],
+      id: "duplicate-pending-record",
+      reddit_post_id: "alternate-provider-id",
+    };
+    global.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          opportunities: [duplicate, replied],
+          products: seedProducts,
+          runs: [],
+        }),
+      ),
+    ) as typeof fetch;
+
+    render(<Dashboard />);
+    await screen.findByRole("heading", { name: "Opportunities" });
+
+    expect(
+      screen.queryByLabelText(`Review opportunity: ${duplicate.post_title}`),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("No opportunities match")).toBeInTheDocument();
   });
   it("shows an animated background status while discovery is running", async () => {
     let finishDiscovery!: (response: Response) => void;
@@ -234,7 +317,7 @@ describe("dashboard UI", () => {
     await u.keyboard("{ArrowLeft}");
     expect(navigation.push).toHaveBeenCalledTimes(1);
   });
-  it("replies to opportunities or rejects them and advances", async () => {
+  it("confirms, replies, and shows the platform receipt", async () => {
     const u = userEvent.setup();
     render(
       <OpportunityDetail
@@ -243,17 +326,24 @@ describe("dashboard UI", () => {
       />,
     );
     await u.click(screen.getByRole("button", { name: /reply to post/i }));
+    expect(screen.getByText("Post this public reply?")).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
+    await u.click(screen.getByRole("button", { name: "Confirm reply" }));
     await waitFor(() =>
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining("/publish"),
         expect.objectContaining({ method: "POST" }),
       ),
     );
+    expect(await screen.findByText("Reply posted successfully")).toBeInTheDocument();
+    expect(screen.getByText("Comment ID: t1_reply")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view reply/i })).toHaveAttribute(
+      "href",
+      "https://reddit.com/reply/t1_reply",
+    );
     expect(navigation.push).toHaveBeenCalledWith("/");
-    await u.click(screen.getByRole("button", { name: /reject/i }));
-    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
-  it("uses Enter for Reply to post and Backspace for Reject outside fields", async () => {
+  it("uses Enter to open and confirm Reply to post", async () => {
     const u = userEvent.setup();
     render(
       <OpportunityDetail
@@ -263,18 +353,34 @@ describe("dashboard UI", () => {
       />,
     );
     await u.keyboard("{Enter}");
+    expect(screen.getByText("Post this public reply?")).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
+    await u.keyboard("{Enter}");
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
     expect(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0])).toContain("/publish");
     expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body))).toMatchObject({
       text: seedOpportunities[0].proposed_reply,
     });
+    expect(await screen.findByText("Comment ID: t1_reply")).toBeInTheDocument();
     expect(navigation.push).toHaveBeenCalledWith("/opportunities/next-id");
+  });
+  it("uses Backspace to reject and advance", async () => {
+    const u = userEvent.setup();
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+        nextId="next-id"
+      />,
+    );
 
     await u.keyboard("{Backspace}");
-    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
-    expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[1][1]?.body))).toMatchObject({
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(String((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body))).toMatchObject({
       status: "rejected",
     });
+    expect(navigation.push).toHaveBeenCalledWith("/opportunities/next-id");
   });
   it("keeps the opportunity pending when Zernio rejects the reply", async () => {
     global.fetch = vi.fn(async () =>
@@ -289,9 +395,34 @@ describe("dashboard UI", () => {
     );
 
     await u.click(screen.getByRole("button", { name: /reply to post/i }));
+    await u.click(screen.getByRole("button", { name: "Confirm reply" }));
 
     expect(await screen.findByText(/plan does not include direct replies/i)).toBeInTheDocument();
     expect(navigation.push).not.toHaveBeenCalled();
+  });
+  it("shows a loader while the platform reply is in flight", async () => {
+    let finish!: (response: Response) => void;
+    const pending = new Promise<Response>((resolve) => { finish = resolve; });
+    global.fetch = vi.fn(async () => pending) as typeof fetch;
+    const u = userEvent.setup();
+    render(
+      <OpportunityDetail
+        initial={seedOpportunities[0]}
+        product={seedProducts[0]}
+      />,
+    );
+
+    await u.click(screen.getByRole("button", { name: /reply to post/i }));
+    await u.click(screen.getByRole("button", { name: "Confirm reply" }));
+
+    expect(screen.getByRole("button", { name: /posting reply/i })).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Waiting for confirmation from the platform");
+    finish(new Response(JSON.stringify({
+      ...seedOpportunities[0],
+      status: "posted",
+      metadata: { published: { id: "t1_done" } },
+    })));
+    expect(await screen.findByText("Comment ID: t1_done")).toBeInTheDocument();
   });
   it("shows a completed state and direct link for a replied opportunity", () => {
     render(
@@ -299,13 +430,14 @@ describe("dashboard UI", () => {
         initial={{
           ...seedOpportunities[0],
           status: "posted",
-          metadata: { published: { url: "https://reddit.com/reply/example" } },
+          metadata: { published: { id: "t1_example", url: "https://reddit.com/reply/example" } },
         }}
         product={seedProducts[0]}
       />,
     );
 
     expect(screen.getByRole("button", { name: "Replied" })).toBeDisabled();
+    expect(screen.getByText("Comment ID: t1_example")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view reply/i })).toHaveAttribute(
       "href",
       "https://reddit.com/reply/example",

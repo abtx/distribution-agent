@@ -8,7 +8,9 @@ import { StrategyPage } from "@/components/StrategyPage";
 import { VideosPage } from "@/components/VideosPage";
 import { SourcesPage } from "@/components/SourcesPage";
 import { WatchlistReviewPage } from "@/components/WatchlistReviewPage";
+import { GlobalToast } from "@/components/GlobalToast";
 import type { Opportunity, Product } from "@/lib/types";
+import { actionableOpportunities } from "@/lib/opportunities/identity";
 
 export function App() {
   const [path, setPath] = useState(window.location.pathname);
@@ -19,15 +21,16 @@ export function App() {
   }, []);
 
   const opportunityId = path.match(/^\/opportunities\/([^/]+)$/)?.[1];
-  if (opportunityId) return <OpportunityRoute id={decodeURIComponent(opportunityId)} />;
-  if (path === "/connections") return <ConnectionsPage />;
-  if (path === "/content") return <ContentPage />;
-  if (path === "/products") return <ProductsPage />;
-  if (path === "/strategy") return <StrategyPage />;
-  if (path === "/sources") return <SourcesPage />;
-  if (path === "/sources/review") return <WatchlistReviewPage />;
-  if (path === "/videos") return <VideosPage />;
-  return <Dashboard />;
+  let page = <Dashboard />;
+  if (opportunityId) page = <OpportunityRoute id={decodeURIComponent(opportunityId)} />;
+  else if (path === "/connections") page = <ConnectionsPage />;
+  else if (path === "/content") page = <ContentPage />;
+  else if (path === "/products") page = <ProductsPage />;
+  else if (path === "/strategy") page = <StrategyPage />;
+  else if (path === "/sources") page = <SourcesPage />;
+  else if (path === "/sources/review") page = <WatchlistReviewPage />;
+  else if (path === "/videos") page = <VideosPage />;
+  return <><GlobalToast />{page}</>;
 }
 
 function OpportunityRoute({ id }: { id: string }) {
@@ -50,7 +53,7 @@ function OpportunityRoute({ id }: { id: string }) {
   if (!data) return <main className="state">Loading opportunity...</main>;
   const opportunity = data.opportunities.find((item) => item.id === id);
   if (!opportunity) return <main className="state error">Opportunity not found</main>;
-  const pending = data.opportunities.filter((item) => item.status === "pending");
+  const pending = actionableOpportunities(data.opportunities);
   const index = pending.findIndex((item) => item.id === id);
   return (
     <OpportunityDetail

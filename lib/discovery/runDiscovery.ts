@@ -9,6 +9,7 @@ import { repository } from "../repository";
 import { marketingStore } from "../marketingStore";
 import { XApiProvider } from "../x/xApiProvider";
 import type { DiscoveryRun, Opportunity } from "../types";
+import { canonicalPostKey } from "../opportunities/identity";
 let running = false;
 export async function runDiscovery(provider?: RedditProvider) {
   if (running) throw new Error("A discovery run is already in progress");
@@ -49,11 +50,13 @@ export async function runDiscovery(provider?: RedditProvider) {
       (p) => p.status === "active",
     );
     const known = new Set(
-      (await repository.opportunities()).map((o) => o.reddit_post_id),
+      (await repository.opportunities()).map(canonicalPostKey),
     );
     const fresh = posts.filter(
       (p) =>
-        !known.has(p.id) &&
+        !known.has(
+          canonicalPostKey({ reddit_post_id: p.id, post_url: p.url }),
+        ) &&
         Date.now() - new Date(p.createdUtc).getTime() < 8 * 86400000,
     );
     for (let i = 0; i < fresh.length; i += 3) {

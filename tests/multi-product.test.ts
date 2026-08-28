@@ -47,6 +47,7 @@ describe("multi-product opportunities", () => {
 
     const reply = await generateReply(post, [seedProducts[0]]);
 
+    expect(reply).toMatch(/^I’m an indie founder working on this:/);
     expect(reply).toMatch(
       /Happy to share more about how I’m building it, and I’d genuinely appreciate any feedback\.$/,
     );
@@ -71,6 +72,9 @@ describe("multi-product opportunities", () => {
 
     const reply = await generateReply(post, products);
 
+    expect(reply).toMatch(
+      /^I’m an indie founder working on a couple of products:\n\n/,
+    );
     expect(reply).toContain(
       "• ReelBlocks - a desktop video editor built for creators who want to get from raw footage to finished video fast - without fighting a traditional editing interface.\nFREE download: https://www.reelblocks.app/",
     );
@@ -113,5 +117,40 @@ describe("multi-product opportunities", () => {
     expect(reply).toContain(seedProducts[1].description);
     expect(reply).toContain(`FREE to use with ChatGPT: ${seedProducts[1].url}`);
     expect(reply).not.toContain("—");
+  });
+
+  it("writes contextual non-promotional replies for ordinary X posts", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const reply = await generateReply(
+      {
+        ...post,
+        platform: "x",
+        title: "You can now share any map view",
+        body: "I added query params so the exact view can be sent as a link.",
+      },
+      seedProducts,
+    );
+
+    expect(reply).toContain("shareable through the URL");
+    expect(reply).not.toContain("ReelBlocks");
+    expect(reply).not.toContain(seedProducts[0].url);
+    expect(reply).not.toContain("•");
+    expect(reply.length).toBeLessThanOrEqual(280);
+    expect(reply).not.toMatch(/[—–]/);
+  });
+
+  it("uses one product and stays within 280 characters when X invites products", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const reply = await generateReply(
+      { ...post, platform: "x" },
+      seedProducts,
+    );
+
+    expect(reply).toContain("ReelBlocks");
+    expect(reply).toContain(seedProducts[0].url);
+    expect(reply).not.toContain("Fluentish");
+    expect(reply).not.toContain(seedProducts[1].url);
+    expect(reply).not.toContain("•");
+    expect(reply.length).toBeLessThanOrEqual(280);
   });
 });

@@ -45,6 +45,7 @@ export async function POST(
       url: opportunity.post_url,
       author: opportunity.author,
       createdUtc: opportunity.created_utc,
+      platform: opportunity.source === "x_api" ? "x" : "reddit",
     },
     products,
   );

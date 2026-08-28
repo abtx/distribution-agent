@@ -1,4 +1,5 @@
 import type { DiscoveryRun, Opportunity, Product } from "./types";
+import { samePost } from "./opportunities/identity";
 import { seedOpportunities, seedProducts } from "./seed";
 import {
   existsSync,
@@ -74,7 +75,7 @@ export const store = {
     return state.products[i];
   },
   addOpportunity: (o: Opportunity) => {
-    if (state.opportunities.some((x) => x.reddit_post_id === o.reddit_post_id))
+    if (state.opportunities.some((x) => samePost(x, o)))
       return false;
     state.opportunities.unshift(o);
     persist(state);
